@@ -158,7 +158,7 @@ const App: React.FC = () => {
         {renderScreen()}
       </main>
       <footer className="text-center mt-8 text-slate-400 text-sm">
-        <p>&copy; {new Date().getFullYear()} Uji Pengetahuan CT Scan. Dibuat untuk tujuan edukasi.</p>
+        <p>&copy; {new Date().getFullYear()} Kelas Praktikum 4D</p>
       </footer>
     </div>
   );
