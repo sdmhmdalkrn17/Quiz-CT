@@ -12,7 +12,8 @@ export enum GameScreen {
   Playing,
   Results,
   Settings,
-  Review, // Added for reviewing incorrect answers
+  Review,
+  Leaderboard,
 }
 
 export type GameMode = 'practice' | 'exam';
