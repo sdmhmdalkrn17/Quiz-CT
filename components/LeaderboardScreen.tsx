@@ -153,9 +153,9 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
   return (
     <div className="flex flex-col p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl min-h-[600px] max-w-7xl mx-auto shadow-2xl border border-slate-700/50">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-center mb-8 pb-6 border-b border-slate-700/50">
-        <div className="text-center lg:text-left mb-6 lg:mb-0">
-          <div className="flex items-center justify-center lg:justify-start gap-3 mb-3">
+      <div className="flex flex-col items-center mb-8 pb-6 border-b border-slate-700/50">
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-3 mb-3">
             <div className="bg-gradient-to-r from-sky-500 to-cyan-500 p-3 rounded-xl shadow-lg">
               <span className="text-2xl">🏆</span>
             </div>
@@ -167,16 +167,6 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
             Total <span className="font-semibold text-sky-400">{leaderboardData.length}</span> Game
           </p>
         </div>
-        
-        <button
-          onClick={onBack}
-          className="bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border border-slate-500/30 flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Kembali
-        </button>
       </div>
 
       {/* Leaderboard Content */}
@@ -281,8 +271,8 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
         </>
       )}
 
-      {/* Refresh Button */}
-      <div className="flex justify-center mt-8 pt-6 border-t border-slate-700/50">
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8 pt-6 border-t border-slate-700/50">
         <button
           onClick={fetchLeaderboard}
           className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center gap-3 border border-teal-500/30"
@@ -291,6 +281,16 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           <span>Refresh Data</span>
+        </button>
+        
+        <button
+          onClick={onBack}
+          className="bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 border border-slate-500/30 flex items-center gap-3"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>Kembali</span>
         </button>
       </div>
     </div>
