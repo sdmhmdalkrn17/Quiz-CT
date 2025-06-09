@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { POINTS_PER_CORRECT_ANSWER } from '../constants';
 import { IncorrectlyAnsweredItem, GameMode } from '../types';
+// Import gambar dari folder assets
+import resultImage from '../assets/image.jpg';
 
 interface ResultsScreenProps {
   score: number;
@@ -166,9 +168,9 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
   return (
     <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center bg-slate-800 rounded-lg min-h-[500px]">
       <img 
-        src={percentage >= 60 ? "https://picsum.photos/seed/ctscanwinner/150/150" : "https://picsum.photos/seed/ctscanstudy/150/150"} 
+        src={resultImage} 
         alt="Result Icon" 
-        className="w-24 h-24 md:w-32 md:h-32 mb-6 rounded-full shadow-lg border-4 border-sky-500" 
+        className="w-24 h-24 md:w-32 md:h-32 mb-6 rounded-full shadow-lg border-4 border-sky-500 object-contain bg-white" 
       />
       <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-sky-400">Permainan Selesai!</h2>
       <p className="text-xl text-slate-300 mb-6">Terima kasih sudah bermain, {playerName}!</p>
