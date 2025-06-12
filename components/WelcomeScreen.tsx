@@ -121,7 +121,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
   const [isImageLoading, setIsImageLoading] = useState<boolean>(false);
   const [showAvatarModal, setShowAvatarModal] = useState<boolean>(false);
-  const [hasSelectedImage, setHasSelectedImage] = useState<boolean>(false);
   const [compressionProgress, setCompressionProgress] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,14 +138,15 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       const storedImage = localStorage.getItem(`profileImage_${trimmedName}`);
       if (storedImage) {
         setProfileImageUrl(storedImage);
-        setHasSelectedImage(true);
-      } else if (!hasSelectedImage) {
+      } else {
+        // Reset gambar jika tidak ada stored image untuk nama ini
         setProfileImageUrl('');
       }
-    } else if (!hasSelectedImage) {
+    } else {
+      // Reset gambar jika nama kosong
       setProfileImageUrl('');
     }
-  }, [name, hasSelectedImage]);
+  }, [name]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -165,37 +165,45 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
       setError('');
       setIsImageLoading(true);
+      setCompressionProgress('Mengompres gambar...');
       
       try {
         const compressedImageUrl = await compressImage(file, 100);
         
+        // Update state dengan gambar baru
         setProfileImageUrl(compressedImageUrl);
-        setHasSelectedImage(true);
         setShowAvatarModal(false);
 
+        // Simpan ke localStorage
         const trimmedName = name.trim();
         if (trimmedName) {
           localStorage.setItem(`profileImage_${trimmedName}`, compressedImageUrl);
         }
         
+        setCompressionProgress('Gambar berhasil dikompres!');
         setTimeout(() => {
           setCompressionProgress('');
         }, 2000);
         
       } catch (error) {
+        console.error('Error compressing image:', error);
         setError('Gagal mengompres gambar. Silakan coba lagi.');
       } finally {
         setIsImageLoading(false);
+        // Reset file input untuk memungkinkan upload file yang sama lagi
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     }
   };
 
   const handleAvatarSelect = (avatarUrl: string) => {
+    // Update state dengan avatar yang dipilih
     setProfileImageUrl(avatarUrl);
-    setHasSelectedImage(true);
     setShowAvatarModal(false);
     
-    // Simpan avatar yang dipilih ke localStorage jika nama sudah ada
+    // Simpan avatar yang dipilih ke localStorage
     const trimmedName = name.trim();
     if (trimmedName) {
       localStorage.setItem(`profileImage_${trimmedName}`, avatarUrl);
