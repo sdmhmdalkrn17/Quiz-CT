@@ -48,13 +48,12 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
   playerName, 
   incorrectlyAnswered, 
   onNavigateToReview,
-  onBackFromReview,
   gameMode
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
-  const [showReviewScreen, setShowReviewScreen] = useState(false);
+  const [, setShowReviewScreen] = useState(false);
   
   // Flag untuk mencegah double submission
   const hasSubmittedRef = useRef(false);

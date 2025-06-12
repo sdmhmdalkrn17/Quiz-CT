@@ -31,6 +31,83 @@ const DEFAULT_AVATARS = [
   ZhilongAvatar,
 ];
 
+// Fungsi untuk mengompres gambar
+const compressImage = (file: File, targetSizeKB: number = 100): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // Hitung dimensi yang optimal
+      let { width, height } = img;
+      const maxDimension = 800; // Maksimal dimensi untuk optimasi
+      
+      if (width > height && width > maxDimension) {
+        height = (height * maxDimension) / width;
+        width = maxDimension;
+      } else if (height > maxDimension) {
+        width = (width * maxDimension) / height;
+        height = maxDimension;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Gambar ke canvas
+      ctx?.drawImage(img, 0, 0, width, height);
+      
+      // Fungsi untuk mencari kualitas yang tepat
+      const findOptimalQuality = (quality: number): string => {
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        return dataUrl;
+      };
+      
+      // Binary search untuk mencari kualitas optimal
+      let minQuality = 0.1;
+      let maxQuality = 0.9;
+      let bestDataUrl = '';
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (minQuality <= maxQuality && attempts < maxAttempts) {
+        const midQuality = (minQuality + maxQuality) / 2;
+        const testDataUrl = findOptimalQuality(midQuality);
+        
+        // Hitung ukuran dalam KB (base64 string size estimation)
+        const sizeKB = (testDataUrl.length * 0.75) / 1024;
+        
+        if (sizeKB <= targetSizeKB) {
+          bestDataUrl = testDataUrl;
+          minQuality = midQuality + 0.05;
+        } else {
+          maxQuality = midQuality - 0.05;
+        }
+        
+        attempts++;
+      }
+      
+      // Jika masih terlalu besar, coba kurangi dimensi
+      if (!bestDataUrl) {
+        const smallerCanvas = document.createElement('canvas');
+        const smallerCtx = smallerCanvas.getContext('2d');
+        const reduction = 0.8;
+        
+        smallerCanvas.width = width * reduction;
+        smallerCanvas.height = height * reduction;
+        smallerCtx?.drawImage(img, 0, 0, smallerCanvas.width, smallerCanvas.height);
+        
+        bestDataUrl = smallerCanvas.toDataURL('image/jpeg', 0.7);
+      }
+      
+      resolve(bestDataUrl);
+    };
+    
+    img.onerror = () => reject(new Error('Gagal memuat gambar'));
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ 
   onStartGame, 
   gameTitle, 
@@ -44,7 +121,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
   const [isImageLoading, setIsImageLoading] = useState<boolean>(false);
   const [showAvatarModal, setShowAvatarModal] = useState<boolean>(false);
-  const [hasSelectedImage, setHasSelectedImage] = useState<boolean>(false); // Track jika user sudah pilih gambar
+  const [hasSelectedImage, setHasSelectedImage] = useState<boolean>(false);
+  const [compressionProgress, setCompressionProgress] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Set nama dari prop jika ada (saat kembali dari hasil permainan)
@@ -63,21 +141,19 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         setProfileImageUrl(storedImage);
         setHasSelectedImage(true);
       } else if (!hasSelectedImage) {
-        // Hanya reset jika user belum pernah pilih gambar di session ini
         setProfileImageUrl('');
       }
     } else if (!hasSelectedImage) {
-      // Hanya reset jika user belum pernah pilih gambar di session ini
       setProfileImageUrl('');
     }
   }, [name, hasSelectedImage]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validasi ukuran file (maksimal 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Ukuran file gambar terlalu besar. Maksimal 5MB.');
+      // Validasi ukuran file maksimal (20MB untuk file asli)
+      if (file.size > 20 * 1024 * 1024) {
+        setError('Ukuran file gambar terlalu besar. Maksimal 20MB.');
         return;
       }
 
@@ -90,33 +166,33 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       setError('');
       setIsImageLoading(true);
       
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newImageUrl = e.target?.result as string;
-        setProfileImageUrl(newImageUrl);
-        setHasSelectedImage(true); // Tandai bahwa user sudah pilih gambar
-        setIsImageLoading(false);
+      try {
+        const compressedImageUrl = await compressImage(file, 100);
+        
+        setProfileImageUrl(compressedImageUrl);
+        setHasSelectedImage(true);
         setShowAvatarModal(false);
 
-        // Simpan gambar ke localStorage berdasarkan nama jika ada
         const trimmedName = name.trim();
         if (trimmedName) {
-          localStorage.setItem(`profileImage_${trimmedName}`, newImageUrl);
+          localStorage.setItem(`profileImage_${trimmedName}`, compressedImageUrl);
         }
-      };
-      
-      reader.onerror = () => {
+        
+        setTimeout(() => {
+          setCompressionProgress('');
+        }, 2000);
+        
+      } catch (error) {
+        setError('Gagal mengompres gambar. Silakan coba lagi.');
+      } finally {
         setIsImageLoading(false);
-        setError('Gagal memuat gambar. Silakan coba lagi.');
-      };
-      
-      reader.readAsDataURL(file);
+      }
     }
   };
 
   const handleAvatarSelect = (avatarUrl: string) => {
     setProfileImageUrl(avatarUrl);
-    setHasSelectedImage(true); // Tandai bahwa user sudah pilih gambar
+    setHasSelectedImage(true);
     setShowAvatarModal(false);
     
     // Simpan avatar yang dipilih ke localStorage jika nama sudah ada
@@ -209,6 +285,13 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 className="hidden" 
               />
             </div>
+            
+            {/* Compression Progress */}
+            {compressionProgress && (
+              <div className="mb-4 px-4 py-2 bg-sky-500/20 border border-sky-500/50 rounded-xl">
+                <p className="text-sky-300 text-sm text-center">{compressionProgress}</p>
+              </div>
+            )}
             
             <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-sky-400 to-teal-400 bg-clip-text text-transparent">
               {gameTitle}
@@ -370,13 +453,27 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
               <button
                 onClick={triggerFileInput}
-                className="w-full bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-600 hover:to-teal-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2"
+                disabled={isImageLoading}
+                className="w-full bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-600 hover:to-teal-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 hover:scale-105 disabled:hover:scale-100 flex items-center justify-center space-x-2"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <span>Upload dari Perangkat</span>
+                {isImageLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span>Upload dari Perangkat</span>
+                  </>
+                )}
               </button>
+              
+              <p className="text-white/50 text-xs text-center">
+                Gambar akan dikompres otomatis hingga ~100KB
+              </p>
             </div>
           </div>
         </div>
