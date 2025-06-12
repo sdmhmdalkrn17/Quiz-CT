@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { POINTS_PER_CORRECT_ANSWER } from '../constants';
 import { IncorrectlyAnsweredItem, GameMode } from '../types';
-// Import gambar dari folder assets
-import resultImage from '../assets/image.jpg';
 
 interface ResultsScreenProps {
   score: number;
@@ -11,6 +9,7 @@ interface ResultsScreenProps {
   playerName: string;
   incorrectlyAnswered: IncorrectlyAnsweredItem[];
   onNavigateToReview: () => void;
+  onBackFromReview?: () => void; // Tambahan prop untuk kembali dari review
   gameMode: GameMode;
 }
 
@@ -24,7 +23,23 @@ interface GameResultData {
   gameMode: GameMode;
   incorrectlyAnswered: IncorrectlyAnsweredItem[];
   completedAt: string;
+  profileImageUrl?: string; // Optional karena bisa kosong jika user tidak upload
 }
+
+// Loading Spinner Component
+const LoadingSpinner: React.FC = () => (
+  <div className="flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
+  </div>
+);
+
+// Loading Overlay Component
+const LoadingOverlay: React.FC<{ message: string }> = ({ message }) => (
+  <div className="bg-slate-700/90 border border-sky-500 text-sky-300 px-6 py-4 rounded-lg mb-4 flex items-center gap-3">
+    <LoadingSpinner />
+    <span className="text-sm">{message}</span>
+  </div>
+);
 
 const ResultsScreen: React.FC<ResultsScreenProps> = ({ 
   score, 
@@ -33,10 +48,13 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
   playerName, 
   incorrectlyAnswered, 
   onNavigateToReview,
+  onBackFromReview,
   gameMode
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [profileImageUrl, setProfileImageUrl] = useState<string>('');
+  const [showReviewScreen, setShowReviewScreen] = useState(false);
   
   // Flag untuk mencegah double submission
   const hasSubmittedRef = useRef(false);
@@ -45,6 +63,24 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
   const correctAnswers = totalQuestions > 0 ? score / POINTS_PER_CORRECT_ANSWER : 0;
   const numCorrectAnswers = Math.max(0, Math.floor(correctAnswers)); 
   const percentage = totalQuestions > 0 ? Math.round((numCorrectAnswers / totalQuestions) * 100) : 0;
+
+  // Load profile image dari localStorage
+  useEffect(() => {
+    const trimmedName = playerName.trim();
+    if (trimmedName) {
+      const storedImage = localStorage.getItem(`profileImage_${trimmedName}`);
+      console.log(`Loading profile image for: ${trimmedName}`, { 
+        hasStoredImage: !!storedImage,
+        imageLength: storedImage ? storedImage.length : 0
+      });
+      
+      if (storedImage) {
+        setProfileImageUrl(storedImage);
+      } else {
+        setProfileImageUrl('');
+      }
+    }
+  }, [playerName]);
 
   let feedbackMessage = "";
   let feedbackColor = "text-sky-400";
@@ -127,21 +163,33 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
   // Otomatis kirim hasil ke server hanya untuk mode ujian
   useEffect(() => {
     if (totalQuestions > 0 && gameMode === 'exam' && !hasSubmittedRef.current) {
-      const resultData: GameResultData = {
-        playerName,
-        score,
-        totalQuestions,
-        correctAnswers: numCorrectAnswers,
-        percentage,
-        gameMode,
-        incorrectlyAnswered,
-        completedAt: new Date().toISOString(),
-      };
+      // Tunggu sedikit untuk memastikan profileImageUrl sudah ter-load dari localStorage
+      const timer = setTimeout(() => {
+        const resultData: GameResultData = {
+          playerName,
+          score,
+          totalQuestions,
+          correctAnswers: numCorrectAnswers,
+          percentage,
+          gameMode,
+          incorrectlyAnswered,
+          completedAt: new Date().toISOString(),
+          ...(profileImageUrl && { profileImageUrl }), // Tambahkan jika ada foto profil
+        };
 
-      // Otomatis kirim untuk mode ujian
-      submitResultsToServer(resultData);
+        console.log('Sending data to server:', { 
+          playerName, 
+          hasProfileImage: !!profileImageUrl,
+          profileImageLength: profileImageUrl ? profileImageUrl.length : 0
+        });
+
+        // Otomatis kirim untuk mode ujian
+        submitResultsToServer(resultData);
+      }, 100); // Delay 100ms untuk memastikan state sudah terupdate
+
+      return () => clearTimeout(timer);
     }
-  }, []);
+  }, [totalQuestions, gameMode, playerName, score, numCorrectAnswers, percentage, incorrectlyAnswered, profileImageUrl]);
 
   // Fungsi untuk manual submit (dipanggil dari tombol)
   const handleManualSubmit = () => {
@@ -160,18 +208,34 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
       gameMode,
       incorrectlyAnswered,
       completedAt: new Date().toISOString(),
+      ...(profileImageUrl && { profileImageUrl }), // Hanya tambahkan jika ada foto profil
     };
 
     submitResultsToServer(resultData);
   };
 
+  // Handler untuk navigasi ke review
+  const handleNavigateToReview = () => {
+    setShowReviewScreen(true);
+    onNavigateToReview();
+  };
+
   return (
     <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center bg-slate-800 rounded-lg min-h-[500px]">
-      <img 
-        src={resultImage} 
-        alt="Result Icon" 
-        className="w-24 h-24 md:w-32 md:h-32 mb-6 rounded-full shadow-lg border-4 border-sky-500 object-contain bg-white" 
-      />
+      {/* Profile Image Section - Hanya tampil jika ada foto profil */}
+      {profileImageUrl && (
+        <div className="relative mb-6 group">
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-500 to-teal-500 rounded-full blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="relative">
+            <img 
+              src={profileImageUrl} 
+              alt="Profil Pengguna" 
+              className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-sky-500 shadow-lg" 
+            />
+          </div>
+        </div>
+      )}
+
       <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-sky-400">Permainan Selesai!</h2>
       <p className="text-xl text-slate-300 mb-6">Terima kasih sudah bermain, {playerName}!</p>
       
@@ -189,16 +253,23 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
       <p className={`text-xl font-semibold mb-4 ${feedbackColor}`}>{feedbackMessage}</p>
       
+      {/* Loading indicator saat mengirim ke server */}
+      {gameMode === 'exam' && isSubmitting && (
+        <LoadingOverlay message="Mengirim hasil ujian ke server..." />
+      )}
+      
       {/* Status indicator untuk submit ke server - hanya tampil di mode ujian */}
       {gameMode === 'exam' && submitStatus === 'success' && (
-        <div className="bg-green-600/20 border border-green-500 text-green-300 px-4 py-2 rounded-lg mb-4">
-          ✅ Hasil ujian berhasil dikirim ke server!
+        <div className="bg-green-600/20 border border-green-500 text-green-300 px-4 py-2 rounded-lg mb-4 flex items-center gap-2">
+          <span className="text-green-400">✅</span>
+          <span>Hasil ujian berhasil dikirim ke server!</span>
         </div>
       )}
       
       {gameMode === 'exam' && submitStatus === 'error' && !hasSubmittedRef.current && (
-        <div className="bg-red-600/20 border border-red-500 text-red-300 px-4 py-2 rounded-lg mb-4">
-          ❌ Gagal mengirim hasil ujian ke server. Silakan coba lagi.
+        <div className="bg-red-600/20 border border-red-500 text-red-300 px-4 py-2 rounded-lg mb-4 flex items-center gap-2">
+          <span className="text-red-400">❌</span>
+          <span>Gagal mengirim hasil ujian ke server. Silakan coba lagi.</span>
         </div>
       )}
 
@@ -206,7 +277,9 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
         <p className="text-sm text-amber-300 mb-4">
           {hasSubmittedRef.current ? 
             "Ini adalah mode ujian. Hasil Anda telah disimpan ke server. Tinjau jawaban Anda untuk melihat penjelasan." :
-            "Ini adalah mode ujian. Mengirim hasil ke server..."
+            isSubmitting ? 
+            "Ini adalah mode ujian. Mengirim hasil ke server..." :
+            "Ini adalah mode ujian. Hasil akan dikirim ke server."
           }
         </p>
       )}
@@ -230,15 +303,22 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
           <button
             onClick={handleManualSubmit}
             disabled={isSubmitting || submissionInProgressRef.current}
-            className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 text-lg disabled:cursor-not-allowed"
+            className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 text-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isSubmitting ? 'Mengirim...' : 'Kirim Ulang ke Server'}
+            {isSubmitting ? (
+              <>
+                <LoadingSpinner />
+                <span>Mengirim...</span>
+              </>
+            ) : (
+              'Kirim Ulang ke Server'
+            )}
           </button>
         )}
         
         {incorrectlyAnswered.length > 0 && (
           <button
-            onClick={onNavigateToReview}
+            onClick={handleNavigateToReview}
             className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 text-lg"
           >
             Tinjau Jawaban Salah ({incorrectlyAnswered.length})

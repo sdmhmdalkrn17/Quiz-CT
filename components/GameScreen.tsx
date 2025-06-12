@@ -9,7 +9,7 @@ interface GameScreenProps {
   question: Question;
   questionNumber: number;
   totalQuestions: number;
-  onAnswerSelected: (isCorrect: boolean, question: Question, selectedOptionId: string) => void;
+  onAnswerSelected: (isCorrect: boolean, question: Question, selectedOptionId: string, timeRemaining?: number) => void;
   onNext: () => void;
   currentScore: number;
   gameMode: GameMode;
@@ -25,11 +25,12 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
   gameMode,
 }) => {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
-  const [isAnswered, setIsAnswered] = useState<boolean>(false);
+  const [, setIsAnswered] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
   const [timerKey, setTimerKey] = useState<number>(Date.now());
+  const [currentTimeRemaining, setCurrentTimeRemaining] = useState<number>(TIME_PER_QUESTION);
 
   const handleOptionSelect = useCallback((optionId: string) => {
     if (isSubmitted) return;
@@ -43,6 +44,7 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
     setIsSubmitted(false);
     setIsCorrect(null);
     setTimerKey(Date.now());
+    setCurrentTimeRemaining(TIME_PER_QUESTION);
     onNext();
   }, [onNext]);
 
@@ -53,35 +55,33 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
     setIsAnswered(true);
     const correct = selectedOptionId === question.correctOptionId;
     setIsCorrect(correct);
-    onAnswerSelected(correct, question, selectedOptionId);
+    onAnswerSelected(correct, question, selectedOptionId, currentTimeRemaining);
 
     if (gameMode === 'practice') {
       setShowFeedbackModal(true);
     } else if (gameMode === 'exam') {
-      // Auto proceed to next question in exam mode after a short delay
       setTimeout(() => {
         proceedToNext();
-      }, 1500); // 1.5 second delay to show the answer briefly
+      }, 1500);
     }
-  }, [selectedOptionId, isSubmitted, question, onAnswerSelected, gameMode, proceedToNext]);
-  
+  }, [selectedOptionId, isSubmitted, question, onAnswerSelected, gameMode, proceedToNext, currentTimeRemaining]);
+
   const handleTimeUp = useCallback(() => {
     if (!isSubmitted) {
       setIsSubmitted(true);
       setIsAnswered(true);
       setIsCorrect(false);
-      onAnswerSelected(false, question, selectedOptionId || 'timed_out'); 
+      onAnswerSelected(false, question, selectedOptionId || 'timed_out', 0); 
       
-      if (gameMode === 'practice') {
-        setShowFeedbackModal(true);
-      } else if (gameMode === 'exam') {
-        // Auto proceed to next question in exam mode after a short delay
-        setTimeout(() => {
-          proceedToNext();
-        }, 1500); // 1.5 second delay to show the timeout state briefly
-      }
+      // Immediately proceed to next question when time is up
+      proceedToNext();
     }
-  }, [isSubmitted, onAnswerSelected, question, gameMode, selectedOptionId, proceedToNext]);
+  }, [isSubmitted, onAnswerSelected, question, selectedOptionId, proceedToNext]);
+
+  // Update current time remaining
+  const handleTimeUpdate = useCallback((timeRemaining: number) => {
+    setCurrentTimeRemaining(timeRemaining);
+  }, []);
 
   useEffect(() => {
     setSelectedOptionId(null);
@@ -90,10 +90,18 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
     setIsCorrect(null);
     setShowFeedbackModal(false);
     setTimerKey(Date.now());
+    setCurrentTimeRemaining(TIME_PER_QUESTION);
   }, [question]);
 
   const showSubmitButton = selectedOptionId && !isSubmitted;
   const showNextButton = isSubmitted && gameMode === 'practice' && !showFeedbackModal;
+
+  // Calculate points preview based on current time
+  const getPointsPreview = () => {
+    if (!selectedOptionId) return 0;
+    if (currentTimeRemaining >= 20) return 10;
+    return 5;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
@@ -145,9 +153,15 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
           </div>
 
           {/* Timer Section */}
-          <div className="mb-8">
+          <div className="mb-6">
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 shadow-lg">
-              <Timer duration={TIME_PER_QUESTION} onTimeUp={handleTimeUp} isPlaying={!isSubmitted} key={timerKey} />
+              <Timer 
+                duration={TIME_PER_QUESTION} 
+                onTimeUp={handleTimeUp} 
+                onTimeUpdate={handleTimeUpdate}
+                isPlaying={!isSubmitted} 
+                key={timerKey} 
+              />
             </div>
           </div>
 
@@ -203,6 +217,7 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
                 <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
+                <span>Melanjutkan otomatis...</span>
               </div>
             )}
           </div>

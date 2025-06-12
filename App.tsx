@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Question, GameScreen, GameMode, IncorrectlyAnsweredItem } from './types';
-import { GAME_TITLE, POINTS_PER_CORRECT_ANSWER, QUESTIONS_PER_GAME, shuffleArray } from './constants';
-import { loadQuestionsFromLocalStorage, saveQuestionsToLocalStorage } from './localStorageUtils';
+import { GAME_TITLE, QUESTIONS_PER_GAME, INITIAL_QUESTIONS, shuffleArray } from './constants';
 import WelcomeScreen from './components/WelcomeScreen';
 import GameScreenComponent from './components/GameScreen';
 import ResultsScreen from './components/ResultsScreen';
@@ -12,7 +11,7 @@ import LeaderboardScreen from './components/LeaderboardScreen';
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<GameScreen>(GameScreen.Welcome);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
-  const [allManagedQuestions, setAllManagedQuestions] = useState<Question[]>(loadQuestionsFromLocalStorage());
+  const [allManagedQuestions] = useState<Question[]>(INITIAL_QUESTIONS);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
   const [playerName, setPlayerName] = useState<string>("");
@@ -20,17 +19,12 @@ const App: React.FC = () => {
   const [incorrectlyAnswered, setIncorrectlyAnswered] = useState<IncorrectlyAnsweredItem[]>([]);
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
 
-  useEffect(() => {
-    saveQuestionsToLocalStorage(allManagedQuestions);
-  }, [allManagedQuestions]);
-
   const prepareQuizQuestions = useCallback(() => {
-    const availableQuestions = allManagedQuestions.length > 0 ? allManagedQuestions : loadQuestionsFromLocalStorage();
-    if (availableQuestions.length === 0) {
-        console.warn("No questions available to start the game.");
-        return [];
+    if (allManagedQuestions.length === 0) {
+      console.warn("No questions available to start the game.");
+      return [];
     }
-    const shuffled = shuffleArray(availableQuestions);
+    const shuffled = shuffleArray(allManagedQuestions);
     return shuffled.slice(0, Math.min(QUESTIONS_PER_GAME, shuffled.length));
   }, [allManagedQuestions]);
 
@@ -48,7 +42,7 @@ const App: React.FC = () => {
     setPlayerName(name);
     setGameMode(mode);
     const questionsForQuiz = prepareQuizQuestions();
-     if (questionsForQuiz.length === 0) {
+    if (questionsForQuiz.length === 0) {
       handleScreenTransition(GameScreen.Welcome);
       setTimeout(() => {
         alert("Tidak ada soal yang tersedia untuk memulai permainan. Silakan tambahkan soal di menu Pengaturan.");
@@ -62,13 +56,36 @@ const App: React.FC = () => {
     handleScreenTransition(GameScreen.Playing);
   }, [prepareQuizQuestions, handleScreenTransition]);
 
-  const handleAnswer = useCallback((isCorrect: boolean, question: Question, selectedOptionId: string) => {
-    if (isCorrect) {
-      setScore(prevScore => prevScore + POINTS_PER_CORRECT_ANSWER);
+  // Updated scoring logic based on time remaining
+  const calculatePoints = useCallback((isCorrect: boolean, timeRemaining: number) => {
+    if (!isCorrect) return 0; // Wrong answer = 0 points
+    
+    // Correct answer scoring based on time remaining
+    if (timeRemaining >= 20) {
+      return 10; // Full points for answering with 20+ seconds remaining
     } else {
-      setIncorrectlyAnswered(prev => [...prev, { question, userAnswerId: selectedOptionId }]);
+      return 5;  // Half points for answering with less than 20 seconds
     }
   }, []);
+
+  const handleAnswer = useCallback((isCorrect: boolean, question: Question, selectedOptionId: string, timeRemaining: number = 0) => {
+    const points = calculatePoints(isCorrect, timeRemaining);
+    
+    // Add points to score
+    setScore(prevScore => prevScore + points);
+    
+    // Track incorrect answers
+    if (!isCorrect) {
+      setIncorrectlyAnswered(prev => [...prev, { 
+        question, 
+        userAnswerId: selectedOptionId,
+        timeRemaining: timeRemaining 
+      }]);
+    }
+
+    // Log scoring for debugging (can be removed in production)
+    console.log(`Answer: ${isCorrect ? 'Correct' : 'Wrong'}, Time: ${timeRemaining}s, Points: ${points}`);
+  }, [calculatePoints]);
 
   const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < quizQuestions.length - 1) {
@@ -93,20 +110,6 @@ const App: React.FC = () => {
   const navigateToLeaderboard = useCallback(() => {
     handleScreenTransition(GameScreen.Leaderboard);
   }, [handleScreenTransition]);
-
-  const handleAddQuestion = useCallback((newQuestion: Question) => {
-    setAllManagedQuestions(prevQuestions => [...prevQuestions, newQuestion]);
-  }, []);
-
-  const handleEditQuestion = useCallback((updatedQuestion: Question) => {
-    setAllManagedQuestions(prevQuestions => 
-      prevQuestions.map(q => q.id === updatedQuestion.id ? updatedQuestion : q)
-    );
-  }, []);
-
-  const handleDeleteQuestion = useCallback((questionId: string) => {
-    setAllManagedQuestions(prevQuestions => prevQuestions.filter(q => q.id !== questionId));
-  }, []);
 
   const renderScreen = () => {
     switch (currentScreen) {
@@ -145,10 +148,6 @@ const App: React.FC = () => {
                 />;
       case GameScreen.Settings:
         return <SettingsScreen 
-                  currentQuestions={allManagedQuestions} 
-                  onAddQuestion={handleAddQuestion}
-                  onEditQuestion={handleEditQuestion}
-                  onDeleteQuestion={handleDeleteQuestion}
                   onBackToWelcome={restartGame} 
                 />;
       case GameScreen.Review:
@@ -165,6 +164,7 @@ const App: React.FC = () => {
                   gameTitle={GAME_TITLE}
                   onNavigateToSettings={navigateToSettings}
                   onNavigateToLeaderboard={navigateToLeaderboard}
+                  playerName={playerName}
                 />;
     }
   };

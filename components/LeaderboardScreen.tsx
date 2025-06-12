@@ -11,6 +11,7 @@ interface LeaderboardEntry {
   gameMode: GameMode;
   completedAt: string;
   submissionId?: string;
+  profileImageUrl?: string;
 }
 
 interface LeaderboardScreenProps {
@@ -72,9 +73,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
       return date.toLocaleDateString('id-ID', {
         day: '2-digit',
         month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        year: 'numeric'
       });
     } catch {
       return 'Tanggal tidak valid';
@@ -103,6 +102,56 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
     if (rank === 2) return '🥈';
     if (rank === 3) return '🥉';
     return '';
+  };
+
+  // Component for profile image with fallback
+  const ProfileImage: React.FC<{ 
+    src?: string; 
+    alt: string; 
+    size?: 'sm' | 'md' | 'lg';
+    className?: string;
+  }> = ({ src, alt, size = 'md', className = '' }) => {
+    const [imageError, setImageError] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    const sizeClasses = {
+      sm: 'w-8 h-8',
+      md: 'w-12 h-12',
+      lg: 'w-16 h-16'
+    };
+
+    const handleImageError = () => {
+      setImageError(true);
+      setIsLoading(false);
+    };
+
+    const handleImageLoad = () => {
+      setIsLoading(false);
+    };
+
+    // If no image URL or image failed to load, show fallback
+    if (!src || imageError) {
+      return (
+        <div className={`${sizeClasses[size]} ${className} bg-gradient-to-br from-sky-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg`}>
+          {alt.charAt(0).toUpperCase()}
+        </div>
+      );
+    }
+
+    return (
+      <div className={`${sizeClasses[size]} ${className} relative`}>
+        {isLoading && (
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full animate-pulse"></div>
+        )}
+        <img
+          src={src}
+          alt={alt}
+          className={`${sizeClasses[size]} rounded-full object-cover border-2 border-slate-400/30 shadow-lg ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+        />
+      </div>
+    );
   };
 
   if (loading) {
@@ -180,7 +229,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
         </div>
       ) : (
         <>
-          {/* Mobile Card View */}
+          {/* Mobile Card View - FIXED */}
           <div className="block lg:hidden space-y-4">
             {sortedData.map((entry, index) => {
               const rank = index + 1;
@@ -189,18 +238,32 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
                      className="bg-gradient-to-r from-slate-700/50 to-slate-800/50 rounded-xl p-4 shadow-lg border border-slate-600/30 hover:shadow-xl transition-all duration-300">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
+                      {/* Rank Badge - Standalone */}
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold ${getRankBadgeStyles(rank)}`}>
                         {getTrophyIcon(rank) || rank}
                       </div>
-                      <div>
-                        <h3 className="text-slate-200 font-semibold text-lg">{entry.playerName}</h3>
-                        <p className="text-slate-400 text-sm">{formatDate(entry.completedAt)}</p>
+                      
+                      {/* Profile Image and Info - Separate from rank */}
+                      <div className="flex items-center gap-3">
+                        <ProfileImage 
+                          src={entry.profileImageUrl} 
+                          alt={entry.playerName}
+                          size="md"
+                        />
+                        <div>
+                          <h3 className="text-slate-200 font-semibold text-lg">{entry.playerName}</h3>
+                          <p className="text-slate-400 text-sm">{formatDate(entry.completedAt)}</p>
+                        </div>
                       </div>
                     </div>
+                    
+                    {/* Percentage Badge */}
                     <span className={`px-3 py-1 text-sm font-bold rounded-lg ${getPercentageBadgeStyles(entry.percentage)}`}>
                       {entry.percentage}%
                     </span>
                   </div>
+                  
+                  {/* Score Details */}
                   <div className="flex justify-between items-center pt-3 border-t border-slate-600/30">
                     <div className="text-center">
                       <p className="text-amber-400 font-bold text-xl">{entry.score}</p>
@@ -247,7 +310,18 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
                           </div>
                         </td>
                         <td className="px-6 py-5 whitespace-nowrap">
-                          <div className="text-slate-200 font-semibold text-lg">{entry.playerName}</div>
+                          <div className="flex items-center gap-4">
+                            <ProfileImage 
+                              src={entry.profileImageUrl} 
+                              alt={entry.playerName}
+                              size="lg"
+                              className="group-hover:scale-105 transition-transform duration-200"
+                            />
+                            <div>
+                              <div className="text-slate-200 font-semibold text-lg">{entry.playerName}</div>
+                              <div className="text-slate-400 text-sm">ID: {entry.submissionId?.split('_')[0] || 'N/A'}</div>
+                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-5 whitespace-nowrap">
                           <div className="text-amber-400 font-bold text-xl">{entry.score}</div>

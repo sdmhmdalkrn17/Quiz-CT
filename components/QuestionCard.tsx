@@ -7,7 +7,7 @@ interface QuestionCardProps {
   selectedOptionId: string | null;
   isAnswered: boolean;
   correctOptionId: string;
-  gameMode: GameMode; // Added gameMode
+  gameMode: GameMode;
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = ({

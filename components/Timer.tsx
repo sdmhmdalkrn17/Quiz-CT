@@ -4,25 +4,31 @@ import React, { useState, useEffect, useRef } from 'react';
 interface TimerProps {
   duration: number; // in seconds
   onTimeUp: () => void;
+  onTimeUpdate?: (timeRemaining: number) => void; // BARU
   isPlaying: boolean;
   key: number; // To reset timer
 }
 
-const Timer: React.FC<TimerProps> = ({ duration, onTimeUp, isPlaying, key }) => {
+const Timer: React.FC<TimerProps> = ({ duration, onTimeUp, onTimeUpdate, isPlaying, key }) => {
   const [timeLeft, setTimeLeft] = useState(duration);
-  // Fix: Changed NodeJS.Timeout to number for browser compatibility
   const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setTimeLeft(duration); // Reset time left when key changes (new question)
+    setTimeLeft(duration); 
   }, [key, duration]);
+
+  useEffect(() => {
+    if (onTimeUpdate) {
+      onTimeUpdate(timeLeft);
+    }
+  }, [timeLeft, onTimeUpdate]);
 
   useEffect(() => {
     if (!isPlaying || timeLeft <= 0) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-      if (timeLeft <= 0 && isPlaying) { // Ensure onTimeUp is called only when timer was running and reached 0
+      if (timeLeft <= 0 && isPlaying) { 
         onTimeUp();
       }
       return;
@@ -32,7 +38,6 @@ const Timer: React.FC<TimerProps> = ({ duration, onTimeUp, isPlaying, key }) => 
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           if (intervalRef.current) clearInterval(intervalRef.current);
-          // onTimeUp(); // onTimeUp will be called by the parent useEffect when timeLeft <= 0
           return 0;
         }
         return prevTime - 1;
