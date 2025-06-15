@@ -120,7 +120,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
   // --- START: KODE PERBAIKAN UNTUK EFEK TYPEWRITER ---
   const [typedText, setTypedText] = useState('');
-  const typewriterText = "HHello Rads, Let's Begin the Explorer !🩻";
+  const typewriterText = "Hello Rads, Let's Begin the Explorer !🩻";
   const typingSpeed = 100;
   const pauseDuration = 2000;
 
