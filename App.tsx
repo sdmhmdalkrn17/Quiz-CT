@@ -184,7 +184,7 @@ return (
     {/* Lapisan gelap opsional agar teks lebih mudah dibaca */}
     <div className="absolute inset-0 bg-black opacity-50"></div>
 
-    <main className={`w-full max-w-2xl bg-slate-800/90 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden border border-slate-700/50 relative z-10 transition-all duration-300 ease-out transform ${
+    <main className={`w-full max-w-2xl backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden border border-slate-700/50 relative z-10 transition-all duration-300 ease-out transform ${
       isTransitioning ? 'opacity-0 scale-95 translate-y-4' : 'opacity-100 scale-100 translate-y-0'
     }`}>
       {/* Glassmorphism overlay */}
