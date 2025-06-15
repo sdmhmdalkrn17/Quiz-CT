@@ -248,7 +248,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-900">
       {/* Background Effects sudah dihapus sesuai permintaan sebelumnya */}
       
       <div className="relative w-full max-w-md">
