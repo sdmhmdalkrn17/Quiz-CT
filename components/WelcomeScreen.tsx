@@ -31,7 +31,7 @@ const DEFAULT_AVATARS = [
   ZhilongAvatar,
 ];
 
-// --- FUNGSI KOMPRESI GAMBAR (TIDAK BERUBAH) ---
+// Fungsi kompresi gambar (tidak berubah)
 const compressImage = (file: File, targetSizeKB: number = 100): Promise<string> => {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
@@ -118,55 +118,47 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [compressionProgress, setCompressionProgress] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- START: KODE BARU UNTUK EFEK TYPEWRITER ---
+  // --- START: KODE TYPEWRITER YANG DIPERBAIKI ---
   const [typedText, setTypedText] = useState('');
-  const typewriterText = " Hello Rads, Let's Begin the Explorer !🩻";
-  const typingSpeed = 100; // milidetik per karakter
-  const pauseDuration = 2000; // 2 detik jeda sebelum mengulang
+  const typewriterText = "Halo Sobat Radiologi !!!";
+  const typingSpeed = 100;
+  const pauseDuration = 2000;
 
   useEffect(() => {
-    let charIndex = 0;
     let timeoutId: number;
+    let charIndex = 0;
 
     const type = () => {
+      // Jika masih ada huruf yang perlu diketik
       if (charIndex < typewriterText.length) {
         setTypedText(prev => prev + typewriterText.charAt(charIndex));
         charIndex++;
         timeoutId = window.setTimeout(type, typingSpeed);
       } else {
-        // Selesai mengetik, jeda lalu reset
-        timeoutId = window.setTimeout(() => {
-          setTypedText('');
-          charIndex = 0;
-          type();
-        }, pauseDuration);
+        // Jika sudah selesai, jeda lalu panggil fungsi reset
+        timeoutId = window.setTimeout(resetAndStartOver, pauseDuration);
       }
     };
 
-    type(); // Mulai efek
+    const resetAndStartOver = () => {
+        setTypedText('');
+        charIndex = 0;
+        // **PERBAIKAN ADA DI SINI:**
+        // Beri jeda singkat sebelum mulai mengetik lagi untuk memastikan state 'setTypedText' sudah diproses
+        timeoutId = window.setTimeout(type, 50); 
+    };
 
-    // Cleanup function untuk membersihkan timeout saat komponen di-unmount
+    // Mulai animasi pertama kali
+    type();
+
+    // Cleanup function
     return () => {
       clearTimeout(timeoutId);
     };
-  }, []); // [] berarti efek ini hanya berjalan sekali saat komponen dimuat
+  }, []);
 
-  // Style untuk kursor yang berkedip
-  const BlinkingCursor = () => (
-    <span className="blinking-cursor" aria-hidden="true">|</span>
-  );
-
-  // CSS untuk animasi kursor, tambahkan ini di style tag pada index.html atau di file CSS utama
-  /*
-    @keyframes blink {
-      50% { opacity: 0; }
-    }
-    .blinking-cursor {
-      animation: blink 1s step-start infinite;
-      font-weight: bold;
-    }
-  */
-  // --- END: KODE BARU UNTUK EFEK TYPEWRITER ---
+  const BlinkingCursor = () => <span className="blinking-cursor" aria-hidden="true">|</span>;
+  // --- END: KODE TYPEWRITER YANG DIPERBAIKI ---
 
 
   useEffect(() => {
@@ -323,8 +315,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               {gameTitle}
             </h1>
 
-            {/* --- PERUBAHAN DI SINI: GUNAKAN TEKS YANG DIANIMASIKAN --- */}
-            <p className="text-white/70 text-lg font-medium h-7"> {/* Beri tinggi tetap agar layout tidak bergeser */}
+            <p className="text-white/70 text-lg font-medium h-7">
               {typedText}
               <BlinkingCursor />
             </p>
