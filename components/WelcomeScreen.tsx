@@ -305,7 +305,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               {gameTitle}
             </h1>
             <p className="text-white/70 text-lg font-medium">
-              Halo Sobat Radiologi !!
+              Halo Sobat Radiologi !!!
             </p>
           </div>
           
