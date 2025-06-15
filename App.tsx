@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import MyBackgroundImage from './assets/Background_Game.jpg'; //
 import { Question, GameScreen, GameMode, IncorrectlyAnsweredItem } from './types';
 import { GAME_TITLE, QUESTIONS_PER_GAME, INITIAL_QUESTIONS, shuffleArray } from './constants';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -169,129 +170,116 @@ const App: React.FC = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-sky-900 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-slate-500/10 rounded-full blur-3xl animate-pulse animation-delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-sky-400/5 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
+
+return (
+  <div
+    className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden"
+    style={{
+      backgroundImage: `url(${MyBackgroundImage})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+    }}
+  >
+    {/* Lapisan gelap opsional agar teks lebih mudah dibaca */}
+    <div className="absolute inset-0 bg-black opacity-50"></div>
+
+    <main className={`w-full max-w-2xl bg-slate-800/90 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden border border-slate-700/50 relative z-10 transition-all duration-300 ease-out transform ${
+      isTransitioning ? 'opacity-0 scale-95 translate-y-4' : 'opacity-100 scale-100 translate-y-0'
+    }`}>
+      {/* Glassmorphism overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-700/20 to-sky-900/20 pointer-events-none"></div>
+
+      {/* Content */}
+      <div className="relative z-10">
+        {renderScreen()}
       </div>
+    </main>
 
-      {/* Floating particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-sky-300/30 rounded-full animate-float"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 10}s`,
-              animationDuration: `${15 + Math.random() * 10}s`
-            }}
-          ></div>
-        ))}
-      </div>
+    <footer className="text-center mt-8 text-slate-400/80 text-sm relative z-10 animate-fade-in animation-delay-1000">
+      <p className="hover:text-sky-300 transition-colors duration-300">
+        &copy; {new Date().getFullYear()} Kelas Praktikum 4D
+      </p>
+    </footer>
 
-      <main className={`w-full max-w-2xl bg-slate-800/90 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden border border-slate-700/50 relative z-10 transition-all duration-300 ease-out transform ${
-        isTransitioning ? 'opacity-0 scale-95 translate-y-4' : 'opacity-100 scale-100 translate-y-0'
-      }`}>
-        {/* Glassmorphism overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-700/20 to-sky-900/20 pointer-events-none"></div>
-        
-        {/* Content */}
-        <div className="relative z-10">
-          {renderScreen()}
-        </div>
-      </main>
-      
-      <footer className="text-center mt-8 text-slate-400/80 text-sm relative z-10 animate-fade-in animation-delay-1000">
-        <p className="hover:text-sky-300 transition-colors duration-300">
-          &copy; {new Date().getFullYear()} Kelas Praktikum 4D
-        </p>
-      </footer>
-
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px) translateX(0px);
-            opacity: 0.3;
-          }
-          25% {
-            transform: translateY(-20px) translateX(10px);
-            opacity: 0.8;
-          }
-          50% {
-            transform: translateY(-10px) translateX(-5px);
-            opacity: 0.5;
-          }
-          75% {
-            transform: translateY(-15px) translateX(15px);
-            opacity: 0.7;
-          }
+    <style dangerouslySetInnerHTML={{
+      __html: `
+      @keyframes float {
+        0%, 100% {
+          transform: translateY(0px) translateX(0px);
+          opacity: 0.3;
         }
-
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        25% {
+          transform: translateY(-20px) translateX(10px);
+          opacity: 0.8;
         }
-
-        .animate-float {
-          animation: float linear infinite;
+        50% {
+          transform: translateY(-10px) translateX(-5px);
+          opacity: 0.5;
         }
+        75% {
+          transform: translateY(-15px) translateX(15px);
+          opacity: 0.7;
+        }
+      }
 
-        .animate-fade-in {
-          animation: fade-in 0.8s ease-out forwards;
+      @keyframes fade-in {
+        from {
           opacity: 0;
+          transform: translateY(20px);
         }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
+      .animate-float {
+        animation: float linear infinite;
+      }
 
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
+      .animate-fade-in {
+        animation: fade-in 0.8s ease-out forwards;
+        opacity: 0;
+      }
 
-        /* Enhanced glassmorphism effect */
-        main::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.3), transparent);
-          z-index: 1;
-        }
+      .animation-delay-1000 {
+        animation-delay: 1s;
+      }
 
-        /* Subtle glow effect */
-        main {
-          box-shadow: 
-            0 25px 50px -12px rgba(0, 0, 0, 0.5),
-            0 0 0 1px rgba(148, 163, 184, 0.1),
-            inset 0 1px 0 rgba(148, 163, 184, 0.1);
-        }
+      .animation-delay-2000 {
+        animation-delay: 2s;
+      }
 
-        main:hover {
-          transform: translateY(-2px);
-          box-shadow: 
-            0 32px 64px -12px rgba(0, 0, 0, 0.6),
-            0 0 0 1px rgba(148, 163, 184, 0.15),
-            inset 0 1px 0 rgba(148, 163, 184, 0.15);
-        }
-        `
-      }} />
-    </div>
-  );
+      main::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.3), transparent);
+        z-index: 1;
+      }
+
+      main {
+        box-shadow: 
+          0 25px 50px -12px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(148, 163, 184, 0.1),
+          inset 0 1px 0 rgba(148, 163, 184, 0.1);
+      }
+
+      main:hover {
+        transform: translateY(-2px);
+        box-shadow: 
+          0 32px 64px -12px rgba(0, 0, 0, 0.6),
+          0 0 0 1px rgba(148, 163, 184, 0.15),
+          inset 0 1px 0 rgba(148, 163, 184, 0.15);
+      }
+      `
+    }} />
+  </div>
+);
 };
 
 export default App;
