@@ -120,7 +120,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
   // --- START: KODE TYPEWRITER YANG DIPERBAIKI ---
   const [typedText, setTypedText] = useState('');
-  const typewriterText = "Halo Sobat Radiologi !!!";
+  const typewriterText = "Hello Rads, Let's Begin the Explorer !🩻";
   const typingSpeed = 100;
   const pauseDuration = 2000;
 
