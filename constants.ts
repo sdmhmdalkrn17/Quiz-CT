@@ -1,6 +1,6 @@
 import { Question } from './types';
 
-export const GAME_TITLE: string = "Uji Pengetahuan CT Scan";
+export const GAME_TITLE: string = "Explore The World of CT Scan";
 export const QUESTIONS_PER_GAME: number = 10;
 export const TIME_PER_QUESTION: number = 30; // seconds
 export const POINTS_PER_CORRECT_ANSWER: number = 10;
