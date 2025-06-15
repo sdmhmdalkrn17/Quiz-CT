@@ -31,7 +31,7 @@ const DEFAULT_AVATARS = [
   ZhilongAvatar,
 ];
 
-// Fungsi untuk mengompres gambar
+// --- FUNGSI KOMPRESI GAMBAR (TIDAK BERUBAH) ---
 const compressImage = (file: File, targetSizeKB: number = 100): Promise<string> => {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
@@ -39,9 +39,8 @@ const compressImage = (file: File, targetSizeKB: number = 100): Promise<string> 
     const img = new Image();
     
     img.onload = () => {
-      // Hitung dimensi yang optimal
       let { width, height } = img;
-      const maxDimension = 800; // Maksimal dimensi untuk optimasi
+      const maxDimension = 800;
       
       if (width > height && width > maxDimension) {
         height = (height * maxDimension) / width;
@@ -54,16 +53,13 @@ const compressImage = (file: File, targetSizeKB: number = 100): Promise<string> 
       canvas.width = width;
       canvas.height = height;
       
-      // Gambar ke canvas
       ctx?.drawImage(img, 0, 0, width, height);
       
-      // Fungsi untuk mencari kualitas yang tepat
       const findOptimalQuality = (quality: number): string => {
         const dataUrl = canvas.toDataURL('image/jpeg', quality);
         return dataUrl;
       };
       
-      // Binary search untuk mencari kualitas optimal
       let minQuality = 0.1;
       let maxQuality = 0.9;
       let bestDataUrl = '';
@@ -73,8 +69,6 @@ const compressImage = (file: File, targetSizeKB: number = 100): Promise<string> 
       while (minQuality <= maxQuality && attempts < maxAttempts) {
         const midQuality = (minQuality + maxQuality) / 2;
         const testDataUrl = findOptimalQuality(midQuality);
-        
-        // Hitung ukuran dalam KB (base64 string size estimation)
         const sizeKB = (testDataUrl.length * 0.75) / 1024;
         
         if (sizeKB <= targetSizeKB) {
@@ -87,7 +81,6 @@ const compressImage = (file: File, targetSizeKB: number = 100): Promise<string> 
         attempts++;
       }
       
-      // Jika masih terlalu besar, coba kurangi dimensi
       if (!bestDataUrl) {
         const smallerCanvas = document.createElement('canvas');
         const smallerCtx = smallerCanvas.getContext('2d');
@@ -108,6 +101,7 @@ const compressImage = (file: File, targetSizeKB: number = 100): Promise<string> 
   });
 };
 
+
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ 
   onStartGame, 
   gameTitle, 
@@ -124,14 +118,63 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [compressionProgress, setCompressionProgress] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Set nama dari prop jika ada (saat kembali dari hasil permainan)
+  // --- START: KODE BARU UNTUK EFEK TYPEWRITER ---
+  const [typedText, setTypedText] = useState('');
+  const typewriterText = "Halo Sobat Radiologi !!!";
+  const typingSpeed = 100; // milidetik per karakter
+  const pauseDuration = 2000; // 2 detik jeda sebelum mengulang
+
+  useEffect(() => {
+    let charIndex = 0;
+    let timeoutId: number;
+
+    const type = () => {
+      if (charIndex < typewriterText.length) {
+        setTypedText(prev => prev + typewriterText.charAt(charIndex));
+        charIndex++;
+        timeoutId = window.setTimeout(type, typingSpeed);
+      } else {
+        // Selesai mengetik, jeda lalu reset
+        timeoutId = window.setTimeout(() => {
+          setTypedText('');
+          charIndex = 0;
+          type();
+        }, pauseDuration);
+      }
+    };
+
+    type(); // Mulai efek
+
+    // Cleanup function untuk membersihkan timeout saat komponen di-unmount
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, []); // [] berarti efek ini hanya berjalan sekali saat komponen dimuat
+
+  // Style untuk kursor yang berkedip
+  const BlinkingCursor = () => (
+    <span className="blinking-cursor" aria-hidden="true">|</span>
+  );
+
+  // CSS untuk animasi kursor, tambahkan ini di style tag pada index.html atau di file CSS utama
+  /*
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+    .blinking-cursor {
+      animation: blink 1s step-start infinite;
+      font-weight: bold;
+    }
+  */
+  // --- END: KODE BARU UNTUK EFEK TYPEWRITER ---
+
+
   useEffect(() => {
     if (playerName && playerName.trim()) {
       setName(playerName.trim());
     }
   }, [playerName]);
 
-  // Load gambar profil berdasarkan nama yang diinput
   useEffect(() => {
     const trimmedName = name.trim();
     if (trimmedName) {
@@ -139,11 +182,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       if (storedImage) {
         setProfileImageUrl(storedImage);
       } else {
-        // Reset gambar jika tidak ada stored image untuk nama ini
         setProfileImageUrl('');
       }
     } else {
-      // Reset gambar jika nama kosong
       setProfileImageUrl('');
     }
   }, [name]);
@@ -151,46 +192,34 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validasi ukuran file maksimal (20MB untuk file asli)
       if (file.size > 20 * 1024 * 1024) {
         setError('Ukuran file gambar terlalu besar. Maksimal 20MB.');
         return;
       }
-
-      // Validasi tipe file
       if (!file.type.startsWith('image/')) {
         setError('File yang dipilih bukan gambar.');
         return;
       }
-
       setError('');
       setIsImageLoading(true);
       setCompressionProgress('Mengompres gambar...');
-      
       try {
         const compressedImageUrl = await compressImage(file, 100);
-        
-        // Update state dengan gambar baru
         setProfileImageUrl(compressedImageUrl);
         setShowAvatarModal(false);
-
-        // Simpan ke localStorage
         const trimmedName = name.trim();
         if (trimmedName) {
           localStorage.setItem(`profileImage_${trimmedName}`, compressedImageUrl);
         }
-        
         setCompressionProgress('Gambar berhasil dikompres!');
         setTimeout(() => {
           setCompressionProgress('');
         }, 2000);
-        
       } catch (error) {
         console.error('Error compressing image:', error);
         setError('Gagal mengompres gambar. Silakan coba lagi.');
       } finally {
         setIsImageLoading(false);
-        // Reset file input untuk memungkinkan upload file yang sama lagi
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -199,11 +228,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   };
 
   const handleAvatarSelect = (avatarUrl: string) => {
-    // Update state dengan avatar yang dipilih
     setProfileImageUrl(avatarUrl);
     setShowAvatarModal(false);
-    
-    // Simpan avatar yang dipilih ke localStorage
     const trimmedName = name.trim();
     if (trimmedName) {
       localStorage.setItem(`profileImage_${trimmedName}`, avatarUrl);
@@ -224,19 +250,15 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       return;
     }
     setError('');
-    
-    // Pastikan gambar tersimpan sebelum memulai game
     const trimmedName = name.trim();
     if (profileImageUrl) {
       localStorage.setItem(`profileImage_${trimmedName}`, profileImageUrl);
     }
-    
     onStartGame(trimmedName, gameMode);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-sky-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
@@ -244,9 +266,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       </div>
       
       <div className="relative w-full max-w-md">
-        {/* Main Card */}
         <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
-          {/* Profile Section */}
           <div className="flex flex-col items-center mb-8">
             <div className="relative mb-6 group">
               <div className="absolute inset-0 bg-gradient-to-r from-sky-500 to-teal-500 rounded-full blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -273,7 +293,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   </div>
                 )}
                 
-                {/* Edit Button */}
                 <button
                   onClick={openAvatarModal}
                   aria-label="Ubah foto profil"
@@ -294,7 +313,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               />
             </div>
             
-            {/* Compression Progress */}
             {compressionProgress && (
               <div className="mb-4 px-4 py-2 bg-sky-500/20 border border-sky-500/50 rounded-xl">
                 <p className="text-sky-300 text-sm text-center">{compressionProgress}</p>
@@ -304,14 +322,15 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-sky-400 to-teal-400 bg-clip-text text-transparent text-center">
               {gameTitle}
             </h1>
-            <p className="text-white/70 text-lg font-medium">
-              Halo Sobat Radiologi !!!
+
+            {/* --- PERUBAHAN DI SINI: GUNAKAN TEKS YANG DIANIMASIKAN --- */}
+            <p className="text-white/70 text-lg font-medium h-7"> {/* Beri tinggi tetap agar layout tidak bergeser */}
+              {typedText}
+              <BlinkingCursor />
             </p>
           </div>
           
-          {/* Form Section */}
           <div className="space-y-6">
-            {/* Name Input */}
             <div className="space-y-2">
               <label htmlFor="playerName" className="text-white/80 font-medium text-sm">
                 Nama Pemain
@@ -329,7 +348,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               </div>
             </div>
 
-            {/* Game Mode Selection */}
             <div className="space-y-4">
               <p className="text-white/80 font-medium text-sm">Mode Permainan</p>
               <div className="grid grid-cols-2 gap-3">
@@ -373,7 +391,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               </div>
             )}
             
-            {/* Start Game Button */}
             <button
               onClick={handleSubmit}
               className="w-full bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-600 hover:to-teal-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 text-lg relative overflow-hidden group"
@@ -388,7 +405,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             </button>
           </div>
           
-          {/* Action Buttons */}
           <div className="mt-8 space-y-3">
             <button
               onClick={onNavigateToLeaderboard}
@@ -414,7 +430,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         </div>
       </div>
 
-      {/* Avatar Selection Modal */}
       {showAvatarModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
@@ -429,8 +444,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 </svg>
               </button>
             </div>
-
-            {/* Avatar Grid */}
             <div className="grid grid-cols-4 gap-4 mb-6">
               {DEFAULT_AVATARS.map((avatar, index) => (
                 <button
@@ -447,8 +460,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 </button>
               ))}
             </div>
-
-            {/* Custom Upload Options */}
             <div className="space-y-3">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -458,7 +469,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   <span className="px-2 bg-slate-900/50 text-white/70">atau</span>
                 </div>
               </div>
-
               <button
                 onClick={triggerFileInput}
                 disabled={isImageLoading}
@@ -478,7 +488,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   </>
                 )}
               </button>
-              
               <p className="text-white/50 text-xs text-center">
                 Gambar akan dikompres otomatis hingga ~100KB
               </p>
