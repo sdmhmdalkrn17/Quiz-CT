@@ -22,14 +22,18 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [showAll, setShowAll] = useState(false); // State untuk toggle tampilan
+  const [totalRecords, setTotalRecords] = useState(0); // Total records di database
 
   // Function to fetch leaderboard data
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = async (showAllData: boolean = false) => {
     setLoading(true);
     setError('');
     
     try {
-      const response = await fetch('https://leaderboard-online.vercel.app/api/leaderboard');
+      // Tambahkan parameter limit berdasarkan showAll state
+      const limitParam = showAllData ? '' : '?limit=10';
+      const response = await fetch(`https://leaderboard-online.vercel.app/api/leaderboard${limitParam}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -40,8 +44,10 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
       // Pastikan data adalah array
       if (Array.isArray(data)) {
         setLeaderboardData(data);
+        setTotalRecords(data.length);
       } else if (data.leaderboard && Array.isArray(data.leaderboard)) {
         setLeaderboardData(data.leaderboard);
+        setTotalRecords(data.total || data.leaderboard.length);
       } else {
         throw new Error('Invalid data format received from server');
       }
@@ -55,8 +61,13 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
 
   // Fetch data on component mount
   useEffect(() => {
-    fetchLeaderboard();
-  }, []);
+    fetchLeaderboard(showAll);
+  }, [showAll]);
+
+  // Handler untuk toggle tampilan
+  const handleToggleView = () => {
+    setShowAll(!showAll);
+  };
 
   // Sort by percentage (descending), then by score (descending)
   const sortedData = [...leaderboardData].sort((a, b) => {
@@ -183,7 +194,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
           <button
-            onClick={fetchLeaderboard}
+            onClick={() => fetchLeaderboard(showAll)}
             className="bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 border border-sky-500/30"
           >
             Coba Lagi
@@ -212,9 +223,35 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
               Papan Peringkat
             </h2>
           </div>
-          <p className="text-slate-300/80 text-sm sm:text-base">
-            Total <span className="font-semibold text-sky-400">{leaderboardData.length}</span> Game
+          <p className="text-slate-300/80 text-sm sm:text-base mb-4">
+            {showAll ? (
+              <>Menampilkan <span className="font-semibold text-sky-400">{leaderboardData.length}</span> dari <span className="font-semibold text-sky-400">{totalRecords}</span> Total Game</>
+            ) : (
+              <>Top <span className="font-semibold text-sky-400">10</span> dari <span className="font-semibold text-sky-400">{totalRecords}</span> Total Game</>
+            )}
           </p>
+          
+          {/* Toggle Button */}
+          <button
+            onClick={handleToggleView}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+              showAll 
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg shadow-orange-500/30'
+                : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/30'
+            }`}
+          >
+            {showAll ? (
+              <>
+                <span className="mr-2">📊</span>
+                Tampilkan Top 10
+              </>
+            ) : (
+              <>
+                <span className="mr-2">📈</span>
+                Tampilkan Semua Data
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -229,7 +266,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
         </div>
       ) : (
         <>
-          {/* Mobile Card View - FIXED */}
+          {/* Mobile Card View */}
           <div className="block lg:hidden space-y-4">
             {sortedData.map((entry, index) => {
               const rank = index + 1;
@@ -348,7 +385,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onBack }) => {
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8 pt-6 border-t border-slate-700/50">
         <button
-          onClick={fetchLeaderboard}
+          onClick={() => fetchLeaderboard(showAll)}
           className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center gap-3 border border-teal-500/30"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
