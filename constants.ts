@@ -1,13 +1,52 @@
-import { Question } from './types';
+import { Question, GameLevel } from './types';
 
 export const GAME_TITLE: string = "Explore The World Of CT Scan";
-export const QUESTIONS_PER_GAME: number = 10;
-export const TIME_PER_QUESTION: number = 30; // seconds
+export const QUESTIONS_PER_LEVEL: number = 10;
 export const POINTS_PER_CORRECT_ANSWER: number = 10;
-export const ADMIN_CODE: string = "admin123"; // Simple admin code for settings access
+export const ADMIN_CODE: string = "admin123";
 export const POINTS_FULL: number = 10;
 export const POINTS_PARTIAL: number = 5;
 export const TIME_THRESHOLD_FULL_POINTS: number = 20;
+
+// Game Level Configuration
+export const GAME_LEVELS: GameLevel[] = [
+  {
+    level: 1,
+    name: "Level Pemula",
+    timePerQuestion: 45,
+    questionsPerLevel: 10,
+    description: "Tingkat dasar dengan waktu 45 detik per soal"
+  },
+  {
+    level: 2,
+    name: "Level Menengah", 
+    timePerQuestion: 30,
+    questionsPerLevel: 10,
+    description: "Tingkat menengah dengan waktu 30 detik per soal"
+  },
+  {
+    level: 3,
+    name: "Level Ahli",
+    timePerQuestion: 25,
+    questionsPerLevel: 10,
+    description: "Tingkat ahli dengan waktu 25 detik per soal"
+  }
+];
+
+// Game Configuration
+export const INITIAL_LIVES: number = 5;
+export const MAX_LEVEL: number = 3;
+
+// Helper function to get level configuration
+export const getLevelConfig = (level: number): GameLevel => {
+  return GAME_LEVELS.find(l => l.level === level) || GAME_LEVELS[0];
+};
+
+// Helper function to get time per question for a level
+export const getTimePerQuestion = (level: number): number => {
+  const levelConfig = getLevelConfig(level);
+  return levelConfig.timePerQuestion;
+};
 
 // Initial set of questions if local storage is empty
 export const INITIAL_QUESTIONS: Question[] = [
@@ -22,7 +61,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'a',
     explanation: 'CT Scan adalah singkatan dari Computed Tomography Scan, sebuah prosedur pencitraan medis yang menggunakan sinar-X dan pemrosesan komputer untuk membuat gambar cross-sectional (irisan) tubuh.',
-    category: 'Dasar CT Scan'
+    category: 'Dasar CT Scan',
+    level: 1
   },
   {
     id: 'q2',
@@ -35,7 +75,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'c',
     explanation: 'CT Scan menggunakan Sinar-X untuk menghasilkan gambar diagnostik. Sinar-X adalah bentuk radiasi elektromagnetik.',
-    category: 'Prinsip Fisika'
+    category: 'Prinsip Fisika',
+    level: 1
   },
   {
     id: 'q3',
@@ -48,7 +89,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'b',
     explanation: 'Media kontras digunakan untuk meningkatkan visualisasi struktur internal tubuh, seperti pembuluh darah atau organ, sehingga lebih mudah dideteksi atau didiagnosis.',
-    category: 'Prosedur Klinis'
+    category: 'Prosedur Klinis',
+    level: 1
   },
   {
     id: 'q4',
@@ -61,7 +103,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'c',
     explanation: 'Hounsfield Unit (HU) adalah skala numerik yang digunakan untuk menggambarkan densitas jaringan pada gambar CT Scan, berdasarkan atenuasi sinar-X.',
-    category: 'Interpretasi Gambar'
+    category: 'Interpretasi Gambar',
+    level: 1
   },
   {
     id: 'q5',
@@ -74,7 +117,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'c',
     explanation: 'CT Scan adalah prosedur non-invasif dan umumnya tidak menyebabkan infeksi bakteri. Risiko lain seperti paparan radiasi dan reaksi kontras adalah pertimbangan penting.',
-    category: 'Keamanan Pasien'
+    category: 'Keamanan Pasien',
+    level: 1
   },
   {
     id: 'q6',
@@ -87,7 +131,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'c',
     explanation: 'Windowing (window width dan window level) adalah proses penyesuaian rentang nilai HU yang ditampilkan pada gambar CT untuk mengoptimalkan visualisasi berbagai jenis jaringan (misalnya, tulang, paru-paru, jaringan lunak).',
-    category: 'Interpretasi Gambar'
+    category: 'Interpretasi Gambar',
+    level: 1
   },
   {
     id: 'q7',
@@ -100,7 +145,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'b',
     explanation: 'CT Angiography (CTA) adalah teknik khusus CT Scan yang menggunakan media kontras intravena untuk menghasilkan gambar detail pembuluh darah dan dapat direkonstruksi menjadi tampilan 3D.',
-    category: 'Teknik Khusus'
+    category: 'Teknik Khusus',
+    level: 1
   },
   {
     id: 'q8',
@@ -113,7 +159,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'b',
     explanation: 'ALARA (As Low As Reasonably Achievable) adalah prinsip fundamental dalam proteksi radiasi, yang bertujuan untuk meminimalkan dosis radiasi pada pasien dan staf tanpa mengorbankan kualitas diagnostik.',
-    category: 'Keamanan Pasien'
+    category: 'Keamanan Pasien',
+    level: 1
   },
   {
     id: 'q9',
@@ -127,7 +174,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'b',
     explanation: 'Artefak beam hardening terjadi karena sinar-X polikromatik menjadi "lebih keras" (energi rata-rata meningkat) saat melewati objek, karena foton energi rendah lebih mudah diserap. Ini dapat menyebabkan garis-garis gelap atau pita pada gambar.',
-    category: 'Artefak & Kualitas Gambar'
+    category: 'Artefak & Kualitas Gambar',
+    level: 1
   },
   {
     id: 'q10',
@@ -140,7 +188,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'a',
     explanation: 'Posisi standar untuk CT Scan kepala adalah pasien berbaring telentang (supine) di atas meja pemeriksaan, dengan kepala diposisikan dengan hati-hati di dalam gantry (lubang scanner).',
-    category: 'Prosedur Klinis'
+    category: 'Prosedur Klinis',
+    level: 1
   },
    {
     id: 'q11',
@@ -153,7 +202,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'b',
     explanation: 'Gantry adalah bagian besar berbentuk cincin dari scanner CT yang menampung tabung Sinar-X, larik detektor, dan sistem akuisisi data (DAS), yang semuanya berputar mengelilingi pasien.',
-    category: 'Komponen Alat'
+    category: 'Komponen Alat',
+    level: 1
   },
   {
     id: 'q12',
@@ -166,7 +216,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: 'c',
     explanation: 'CT Scan umumnya lebih cepat daripada MRI, menjadikannya pilihan yang baik untuk situasi darurat atau trauma. Meskipun MRI unggul dalam detail jaringan lunak, CT lebih cepat dan seringkali lebih tersedia.',
-    category: 'Perbandingan Modalitas'
+    category: 'Perbandingan Modalitas',
+    level: 1
   },
   {
   id: "q13",
@@ -179,7 +230,8 @@ export const INITIAL_QUESTIONS: Question[] = [
   ],
   correctOptionId: "d",
   explanation: "Meja pemeriksaan digunakan untuk memposisikan pasien secara tepat selama proses CT Scan.",
-  category: "Komponen CT Scan"
+  category: "Komponen CT Scan",
+  level: 1
   },
   {
     id: "q14",
@@ -192,7 +244,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Fiber karbon digunakan karena ringan dan tidak menyerap sinar-X.",
-    category: "Komponen CT Scan"
+    category: "Komponen CT Scan",
+    level: 1
   },
   {
     id: "q15",
@@ -205,7 +258,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "d",
     explanation: "Supine atau terlentang adalah posisi standar pasien saat CT Scan.",
-    category: "Prosedur CT Scan"
+    category: "Prosedur CT Scan",
+    level: 1
   },
   {
     id: "q16",
@@ -218,7 +272,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Slip rings memungkinkan transmisi listrik tanpa kabel, memungkinkan gantry terus berputar.",
-    category: "Komponen CT Scan"
+    category: "Komponen CT Scan",
+    level: 2
   },
   {
     id: "q17",
@@ -231,7 +286,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Kontras intravena diberikan berdasarkan berat badan untuk dosis yang tepat.",
-    category: "Kontras CT Scan"
+    category: "Kontras CT Scan",
+    level: 2
   },
   {
     id: "q18",
@@ -244,7 +300,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Creatinin dan ureum diperiksa untuk memastikan fungsi ginjal pasien sebelum pemberian kontras.",
-    category: "Persiapan Pemeriksaan"
+    category: "Persiapan Pemeriksaan",
+    level: 2
   },
   {
     id: "q19",
@@ -257,7 +314,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Detektor mengubah sinar-X yang melewati tubuh menjadi sinyal untuk pemrosesan.",
-    category: "Komponen CT Scan"
+    category: "Komponen CT Scan",
+    level: 2
   },
   {
     id: "q20",
@@ -270,7 +328,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "DAS (Data Acquisition System) mengubah sinyal dari detektor menjadi bentuk digital.",
-    category: "Komponen CT Scan"
+    category: "Komponen CT Scan",
+    level: 2
   },
   {
     id: "q21",
@@ -283,7 +342,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Iodin adalah bahan utama media kontras pada CT karena kemampuan penyerapannya terhadap sinar-X.",
-    category: "Kontras CT Scan"
+    category: "Kontras CT Scan",
+    level: 2
   },
   {
     id: "q22",
@@ -296,7 +356,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Multi slice CT menggunakan banyak irisan dalam satu rotasi untuk mempercepat pencitraan.",
-    category: "Teknik CT Scan"
+    category: "Teknik CT Scan",
+    level: 2
   },
   {
     id: "q23",
@@ -309,7 +370,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Godfrey Hounsfield adalah penemu CT Scan dan menerima Nobel atas temuannya.",
-    category: "Sejarah CT Scan"
+    category: "Sejarah CT Scan",
+    level: 2
   },
   {
     id: "q24",
@@ -322,7 +384,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "FOV (Field of View) adalah area tubuh yang dicakup dalam pemindaian.",
-    category: "Istilah Teknis"
+    category: "Istilah Teknis",
+    level: 2
   },
   {
     id: "q25",
@@ -335,7 +398,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "CT kepala cepat mendeteksi stroke terutama perdarahan akut.",
-    category: "Aplikasi Klinis"
+    category: "Aplikasi Klinis",
+    level: 2
   },
   {
     id: "q26",
@@ -348,7 +412,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Volume Rendering (VR) digunakan untuk membuat tampilan 3D dari data CT.",
-    category: "Teknik Citra"
+    category: "Teknik Citra",
+    level: 2
   },
   {
     id: "q27",
@@ -361,7 +426,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Injector memberikan kontras dengan kecepatan dan volume yang dikontrol otomatis.",
-    category: "Peralatan CT"
+    category: "Peralatan CT",
+    level: 2
   },
   {
     id: "q28",
@@ -374,7 +440,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Slice thickness menentukan seberapa tebal setiap potongan citra CT.",
-    category: "Parameter Pencitraan"
+    category: "Parameter Pencitraan",
+    level: 2
   },
   {
     id: "q29",
@@ -387,7 +454,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "a",
     explanation: "Pitch menunjukkan hubungan antara kecepatan meja dan rotasi gantry.",
-    category: "Parameter Pencitraan"
+    category: "Parameter Pencitraan",
+    level: 2
   },
   {
     id: "q30",
@@ -400,7 +468,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Rotation time adalah waktu yang diperlukan gantry untuk berputar satu kali penuh.",
-    category: "Parameter Pencitraan"
+    category: "Parameter Pencitraan",
+    level: 2
   },
   {
     id: "q31",
@@ -413,7 +482,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "MinIP (Minimum Intensity Projection) menyorot area dengan densitas rendah seperti saluran napas.",
-    category: "Teknik Citra"
+    category: "Teknik Citra",
+    level: 3
   },
   {
     id: "q32",
@@ -426,7 +496,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Motion artifact disebabkan oleh pergerakan pasien selama pemeriksaan.",
-    category: "Artefak"
+    category: "Artefak",
+    level: 3
   },
   {
     id: "q33",
@@ -439,7 +510,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Beam hardening terjadi akibat penyerapan sinar lebih besar pada jaringan padat seperti tulang.",
-    category: "Artefak"
+    category: "Artefak",
+    level: 3
   },
   {
     id: "q34",
@@ -452,7 +524,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "MPR (Multiplanar Reconstruction) memungkinkan tampilan irisan dari berbagai sudut.",
-    category: "Teknik Citra"
+    category: "Teknik Citra",
+    level: 3
   },
   {
     id: "q35",
@@ -465,7 +538,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "a",
     explanation: "MIP (Maximum Intensity Projection) menyorot struktur densitas tinggi seperti vaskular.",
-    category: "Teknik Citra"
+    category: "Teknik Citra",
+    level: 3
   },
   {
     id: "q36",
@@ -478,7 +552,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "CTDI (Computed Tomography Dose Index) mengukur paparan dosis dalam CT.",
-    category: "Dosis Radiasi"
+    category: "Dosis Radiasi",
+    level: 3
   },
   {
     id: "q37",
@@ -491,7 +566,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Blooming terjadi karena peningkatan kontras ekstrem dalam gambar CT.",
-    category: "Artefak"
+    category: "Artefak",
+    level: 3
   },
   {
     id: "q38",
@@ -504,7 +580,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Tulang menyerap sinar-X lebih banyak dan tampak paling putih pada CT.",
-    category: "Anatomi CT"
+    category: "Anatomi CT",
+    level: 3
   },
   {
     id: "q39",
@@ -517,7 +594,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Udara memiliki densitas paling rendah, tampak paling hitam pada CT.",
-    category: "Anatomi CT"
+    category: "Anatomi CT",
+    level: 3
   },
   {
     id: "q40",
@@ -530,7 +608,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Bolus injection memberikan kontras cepat untuk pencitraan vaskular.",
-    category: "Kontras CT"
+    category: "Kontras CT",
+    level: 3
   },
   {
     id: "q41",
@@ -543,7 +622,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "SSD (Shaded Surface Display) menampilkan struktur permukaan seperti tulang.",
-    category: "Teknik Citra"
+    category: "Teknik Citra",
+    level: 3
   },
   {
     id: "q42",
@@ -556,7 +636,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Delay digunakan untuk menunggu penyebaran kontras sebelum pemindaian.",
-    category: "Protokol CT"
+    category: "Protokol CT",
+    level: 3
   },
   {
     id: "q43",
@@ -569,7 +650,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "CT Scan sebaiknya dihindari pada ibu hamil karena melibatkan radiasi.",
-    category: "Keamanan"
+    category: "Keamanan",
+    level: 3
   },
   {
     id: "q44",
@@ -582,7 +664,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Generasi ke-7 CT Scan adalah MSCT (Multi Slice Computed Tomography).",
-    category: "Teknologi CT"
+    category: "Teknologi CT",
+    level: 3
   },
   {
     id: "q45",
@@ -595,7 +678,8 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "b",
     explanation: "Low Dose CT digunakan untuk mengurangi risiko paparan radiasi.",
-    category: "Dosis Radiasi"
+    category: "Dosis Radiasi",
+    level: 3
   },
   {
     id: "q46",
@@ -608,15 +692,28 @@ export const INITIAL_QUESTIONS: Question[] = [
     ],
     correctOptionId: "c",
     explanation: "Fiksasi penting untuk mencegah gerakan yang menyebabkan artefak.",
-    category: "Prosedur Pemeriksaan"
+    category: "Prosedur Pemeriksaan",
+    level: 3
   }
 ];
 
-export function shuffleArray<T,>(array: T[]): T[] {
+
+export function shuffleArray<T>(array: T[]): T[] {
   const shuffledArray = [...array];
   for (let i = shuffledArray.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
   }
   return shuffledArray;
+}
+
+// Get questions for specific level
+export function getQuestionsForLevel(level: number, allQuestions: Question[]): Question[] {
+  const levelQuestions = allQuestions.filter(q => q.level === level);
+  return shuffleArray(levelQuestions).slice(0, QUESTIONS_PER_LEVEL);
+}
+
+// Get all available levels
+export function getAvailableLevels(): number[] {
+  return GAME_LEVELS.map(level => level.level);
 }

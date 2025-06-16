@@ -61,7 +61,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
   const correctAnswers = totalQuestions > 0 ? score / POINTS_PER_CORRECT_ANSWER : 0;
   const numCorrectAnswers = Math.max(0, Math.floor(correctAnswers)); 
-  const percentage = totalQuestions > 0 ? Math.round((numCorrectAnswers / totalQuestions) * 100) : 0;
+  const percentage = Math.min(100, Math.round((correctAnswers / totalQuestions) * 100));
 
   // Load profile image dari localStorage
   useEffect(() => {
@@ -242,7 +242,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
         <p className="text-2xl font-semibold text-amber-400 mb-2">Skor Akhir Anda: {score}</p>
         {totalQuestions > 0 && (
           <p className="text-lg text-slate-300">
-            Anda menjawab {numCorrectAnswers} dari {totalQuestions} pertanyaan dengan benar. ({percentage}%)
+            Anda menjawab {numCorrectAnswers} pertanyaan dengan benar.
           </p>
         )}
          {totalQuestions === 0 && (
