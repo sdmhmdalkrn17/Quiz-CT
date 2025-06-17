@@ -19,7 +19,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   gameMode,
 }) => {
   const getButtonClass = (optionId: string) => {
-    let baseClass = "w-full text-left p-4 my-2 rounded-lg border-2 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800";
+    let baseClass = "w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800";
     
     if (!isAnswered) {
       return `${baseClass} bg-slate-700 border-slate-600 hover:bg-sky-700 hover:border-sky-500 text-slate-100`;
@@ -50,7 +50,9 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
       <h2 className="text-xl sm:text-2xl font-semibold mb-6 text-sky-300 leading-tight">
         {question.text}
       </h2>
-      <div className="space-y-3 flex-grow">
+      
+      {/* Grid layout for options - 2 columns on larger screens, 1 on mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-grow">
         {question.options.map((option) => (
           <button
             key={option.id}
