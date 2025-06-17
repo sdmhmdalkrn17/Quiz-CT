@@ -13,7 +13,7 @@ import AudioControls from './components/AudioControls';
 import { useAudio } from './hooks/useAudio';
 
 // Placeholder audio URL - replace with your actual audio file path
-const BACKGROUND_MUSIC_URL = '/assets/background-music.mp3';
+const BACKGROUND_MUSIC_URL = '/background-music.mp3';
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<GameScreen>(GameScreen.Welcome);
