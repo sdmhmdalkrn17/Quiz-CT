@@ -8,7 +8,12 @@ import ResultsScreen from './components/ResultsScreen';
 import SettingsScreen from './components/SettingsScreen';
 import ReviewAnswersScreen from './components/ReviewAnswersScreen';
 import LeaderboardScreen from './components/LeaderboardScreen';
-import MaterialScreen from './components/MaterialScreen'; // Add this import
+import MaterialScreen from './components/MaterialScreen';
+import AudioControls from './components/AudioControls';
+import { useAudio } from './hooks/useAudio';
+
+// Placeholder audio URL - replace with your actual audio file path
+const BACKGROUND_MUSIC_URL = '/assets/background-music.mp3';
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<GameScreen>(GameScreen.Welcome);
@@ -24,8 +29,19 @@ const App: React.FC = () => {
   const [lives, setLives] = useState<number>(5);
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
 
+  // Initialize audio with simplified configuration
+  const {
+    isPlaying,
+    isMuted,
+    toggleMute,
+    isLoaded: isAudioLoaded
+  } = useAudio(BACKGROUND_MUSIC_URL, {
+    loop: true,
+    autoPlay: true,
+    volume: 0.5
+  });
+
   // Add the missing getQuestionsForLevel function
-  // Ganti fungsi getQuestionsForLevel (baris 25-30)
   const getQuestionsForLevel = useCallback((level: number, questions: Question[]): Question[] => {
     // Filter questions by level first
     const levelQuestions = questions.filter(q => q.level === level);
@@ -73,64 +89,54 @@ const App: React.FC = () => {
     setScore(0);
     setCurrentLevel(1);
     setIncorrectlyAnswered([]);
-    setLives(5); // Reset lives when starting new game
-    setIsGameOver(false); // Reset game over state
+    setLives(5);
+    setIsGameOver(false);
+    
     handleScreenTransition(GameScreen.Playing);
   }, [prepareQuizQuestions, handleScreenTransition]);
 
   // Updated scoring logic based on time remaining
   const calculatePoints = useCallback((isCorrect: boolean, timeRemaining: number) => {
-    if (!isCorrect) return 0; // Wrong answer = 0 points
+    if (!isCorrect) return 0;
     
-    // Correct answer scoring based on time remaining
     if (timeRemaining >= 20) {
-      return 10; // Full points for answering with 20+ seconds remaining
+      return 10;
     } else {
-      return 5;  // Half points for answering with less than 20 seconds
+      return 5;
     }
   }, []);
 
-// FIXED: Modifikasi handleAnswer untuk membedakan mode latihan dan ujian
-const handleAnswer = useCallback((isCorrect: boolean, question: Question, selectedOptionId: string, timeRemaining: number = 0) => {
-  const points = calculatePoints(isCorrect, timeRemaining);
-  setScore(prevScore => prevScore + points);
-  
-  // PENTING: Hanya kurangi nyawa jika mode UJIAN dan jawaban salah
-  if (!isCorrect) {
-    // Selalu catat jawaban salah untuk review, tidak peduli mode apa
-    setIncorrectlyAnswered(prev => [...prev, { 
-      question, 
-      userAnswerId: selectedOptionId,
-      timeRemaining: timeRemaining 
-    }]);
+  const handleAnswer = useCallback((isCorrect: boolean, question: Question, selectedOptionId: string, timeRemaining: number = 0) => {
+    const points = calculatePoints(isCorrect, timeRemaining);
+    setScore(prevScore => prevScore + points);
     
-    // HANYA kurangi nyawa jika mode UJIAN
-    if (gameMode === 'exam') {
-      setLives(prevLives => {
-        const newLives = prevLives - 1;
-        if (newLives <= 0) {
-          setIsGameOver(true);
-        }
-        return newLives;
-      });
+    if (!isCorrect) {
+      setIncorrectlyAnswered(prev => [...prev, { 
+        question, 
+        userAnswerId: selectedOptionId,
+        timeRemaining: timeRemaining 
+      }]);
+      
+      if (gameMode === 'exam') {
+        setLives(prevLives => {
+          const newLives = prevLives - 1;
+          if (newLives <= 0) {
+            setIsGameOver(true);
+          }
+          return newLives;
+        });
+      }
     }
-    // Di mode latihan, nyawa tidak berkurang sama sekali
-  }
-}, [calculatePoints, gameMode]); // Tambahkan gameMode ke dependency
+  }, [calculatePoints, gameMode]);
 
-  // FIXED: Modifikasi handleNextQuestion untuk membedakan mode latihan dan ujian
   const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < quizQuestions.length - 1) {
       setCurrentQuestionIndex(prevIndex => prevIndex + 1);
     } else {
-      // PERBAIKAN: Logika naik level yang berbeda untuk mode latihan dan ujian
       if (currentLevel < 3) {
-        // Untuk mode LATIHAN: selalu bisa naik level
-        // Untuk mode UJIAN: hanya bisa naik level jika nyawa > 0
         const canProgressToNextLevel = gameMode === 'practice' || (gameMode === 'exam' && lives > 0);
         
         if (canProgressToNextLevel) {
-          // Progress to next level
           const nextLevel = currentLevel + 1;
           setCurrentLevel(nextLevel);
           const nextLevelQuestions = prepareQuizQuestions(nextLevel);
@@ -141,11 +147,9 @@ const handleAnswer = useCallback((isCorrect: boolean, question: Question, select
           }
         }
       }
-      // End game - go to results
       handleScreenTransition(GameScreen.Results);
     }
-  }, [currentQuestionIndex, quizQuestions.length, lives, currentLevel, prepareQuizQuestions, handleScreenTransition, gameMode]); // Tambahkan gameMode ke dependency
-
+  }, [currentQuestionIndex, quizQuestions.length, lives, currentLevel, prepareQuizQuestions, handleScreenTransition, gameMode]);
 
   const handleGameOver = useCallback(() => {
     handleScreenTransition(GameScreen.Results);
@@ -154,6 +158,7 @@ const handleAnswer = useCallback((isCorrect: boolean, question: Question, select
   const handleGameComplete = useCallback(() => {
     handleScreenTransition(GameScreen.Results);
   }, [handleScreenTransition]);
+
   const restartGame = useCallback(() => {
     handleScreenTransition(GameScreen.Welcome);
   }, [handleScreenTransition]);
@@ -170,7 +175,6 @@ const handleAnswer = useCallback((isCorrect: boolean, question: Question, select
     handleScreenTransition(GameScreen.Leaderboard);
   }, [handleScreenTransition]);
 
-  // Add navigation function for Material screen
   const navigateToMaterial = useCallback(() => {
     handleScreenTransition(GameScreen.Material);
   }, [handleScreenTransition]);
@@ -226,7 +230,6 @@ const handleAnswer = useCallback((isCorrect: boolean, question: Question, select
                 />;
       case GameScreen.Leaderboard:
         return <LeaderboardScreen onBack={restartGame} />;
-      // Add Material screen case
       case GameScreen.Material:
         return <MaterialScreen onNavigateBack={restartGame} />;
       case GameScreen.Welcome:
@@ -236,7 +239,7 @@ const handleAnswer = useCallback((isCorrect: boolean, question: Question, select
                   gameTitle={GAME_TITLE}
                   onNavigateToSettings={navigateToSettings}
                   onNavigateToLeaderboard={navigateToLeaderboard}
-                  onNavigateToMaterial={navigateToMaterial} // Add this prop
+                  onNavigateToMaterial={navigateToMaterial}
                   playerName={playerName}
                 />;
     }
@@ -252,8 +255,27 @@ const handleAnswer = useCallback((isCorrect: boolean, question: Question, select
         backgroundRepeat: 'no-repeat',
       }}
     >
-      {/* Lapisan gelap opsional agar teks lebih mudah dibaca */}
-      <div className="absolute inset-0 bg-black opacity-50"></div>
+      {/* Audio Controls - Fixed position */}
+      <div className="fixed top-4 right-4 z-50">
+        <div className="backdrop-blur-xl bg-slate-800/40 p-3 rounded-xl border border-slate-600/30 shadow-xl">
+          <AudioControls
+            isMuted={isMuted}
+            isPlaying={isPlaying}
+            onToggleMute={toggleMute}
+            isLoaded={isAudioLoaded}
+          />
+        </div>
+      </div>
+
+      {/* Music Toggle Button - Show when audio is loaded */}
+      {isAudioLoaded && (
+        <div className="fixed top-20 right-4 z-50">
+          <button
+            onClick={toggleMute}
+          >
+          </button>
+        </div>
+      )}
 
       <main className={`w-full max-w-2xl backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden border border-slate-700/50 relative z-10 transition-all duration-300 ease-out transform ${
         isTransitioning ? 'opacity-0 scale-95 translate-y-4' : 'opacity-100 scale-100 translate-y-0'
