@@ -53,7 +53,7 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
   const [showExamFeedback, setShowExamFeedback] = useState<boolean>(false);
   const [gameEndReason, setGameEndReason] = useState<'lives' | 'questions' | null>(null);
   
-  // NEW: State untuk mengontrol apakah user sudah klik tombol
+  // State untuk mengontrol apakah user sudah klik tombol
   const [userConfirmedGameEnd, setUserConfirmedGameEnd] = useState<boolean>(false);
 
   const handleOptionSelect = useCallback((optionId: string) => {
@@ -120,6 +120,7 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
     setCurrentTimeRemaining(timeRemaining);
   }, []);
 
+  // Level transition effect
   useEffect(() => {
     if (currentLevel > lastKnownLevel && !showLevelTransition) {
       console.log(`Level up detected: ${lastKnownLevel} -> ${currentLevel}`);
@@ -140,22 +141,28 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
     }
   }, [currentLevel, lastKnownLevel, showLevelTransition]);
 
-  // FIXED: Handle game over when lives reach 0 - hanya show modal, tidak auto-redirect
+  // FIXED: Handle game over - hanya untuk mode exam ketika lives = 0
   useEffect(() => {
-    if (lives === 0 && !showGameCompletionModal && !userConfirmedGameEnd) {
+    if (gameMode === 'exam' && lives === 0 && !showGameCompletionModal && !userConfirmedGameEnd && !isGameOver) {
       setGameEndReason('lives');
       setShowGameCompletionModal(true);
     }
-  }, [lives, showGameCompletionModal, userConfirmedGameEnd]);
+  }, [lives, showGameCompletionModal, userConfirmedGameEnd, gameMode, isGameOver]);
 
-  // FIXED: Handle game completion when all questions are finished - hanya show modal, tidak auto-redirect
+  // FIXED: Handle game completion - hanya ketika isGameOver dari App.tsx
   useEffect(() => {
-    if (isGameOver && questionNumber >= totalQuestions && !showGameCompletionModal && !userConfirmedGameEnd) {
-      setGameEndReason('questions');
+    if (isGameOver && !showGameCompletionModal && !userConfirmedGameEnd) {
+      // Determine end reason based on lives for exam mode
+      if (gameMode === 'exam' && lives === 0) {
+        setGameEndReason('lives');
+      } else {
+        setGameEndReason('questions');
+      }
       setShowGameCompletionModal(true);
     }
-  }, [isGameOver, questionNumber, totalQuestions, showGameCompletionModal, userConfirmedGameEnd]);
+  }, [isGameOver, showGameCompletionModal, userConfirmedGameEnd, gameMode, lives]);
 
+  // Reset states when question changes
   useEffect(() => {
     if (showLevelTransition) return;
     
@@ -172,12 +179,11 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
   const showSubmitButton = selectedOptionId && !isSubmitted && !showLevelTransition;
   const showNextButton = isSubmitted && gameMode === 'practice' && !showFeedbackModal && !showLevelTransition;
 
-  // FIXED: Handler hanya dipanggil setelah user mengklik tombol secara eksplisit
+  // Handler untuk game completion modal
   const handleGameCompletionClose = () => {
-    setUserConfirmedGameEnd(true); // Mark bahwa user sudah confirm
+    setUserConfirmedGameEnd(true);
     setShowGameCompletionModal(false);
     
-    // Delay sedikit untuk memastikan modal tertutup dulu
     setTimeout(() => {
       if (gameEndReason === 'lives') {
         if (onGameOver) {
@@ -253,27 +259,29 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
             </div>
           </div>
 
-          {/* Lives Display */}
-          <div className="mb-6">
-            <div className={`bg-white/10 backdrop-blur-sm border rounded-2xl px-6 py-3 shadow-lg transition-all duration-300 ${
-              lives <= 1 ? 'border-red-500/50 bg-red-500/10' : 'border-white/20'
-            }`}>
-              <div className="flex items-center space-x-2">
-                <svg className={`w-5 h-5 ${lives <= 1 ? 'text-red-400 animate-pulse' : 'text-red-400'}`} fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                </svg>
-                <span className="text-lg font-bold text-white">Nyawa: </span>
-                <span className={`text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${
-                  lives <= 1 ? 'from-red-400 to-red-300' : 'from-red-400 to-red-300'
-                }`}>
-                  {lives}
-                </span>
-                {lives <= 1 && (
-                  <span className="text-red-400 text-sm animate-pulse ml-2">⚠️ Hati-hati!</span>
-                )}
+          {/* Lives Display - HANYA tampil di mode exam */}
+          {gameMode === 'exam' && (
+            <div className="mb-6">
+              <div className={`bg-white/10 backdrop-blur-sm border rounded-2xl px-6 py-3 shadow-lg transition-all duration-300 ${
+                lives <= 1 ? 'border-red-500/50 bg-red-500/10' : 'border-white/20'
+              }`}>
+                <div className="flex items-center space-x-2">
+                  <svg className={`w-5 h-5 ${lives <= 1 ? 'text-red-400 animate-pulse' : 'text-red-400'}`} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-lg font-bold text-white">Nyawa: </span>
+                  <span className={`text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${
+                    lives <= 1 ? 'from-red-400 to-red-300' : 'from-red-400 to-red-300'
+                  }`}>
+                    {lives}
+                  </span>
+                  {lives <= 1 && (
+                    <span className="text-red-400 text-sm animate-pulse ml-2">⚠️ Hati-hati!</span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Timer Section */}
           <div className="mb-6">
@@ -423,7 +431,7 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
         </div>
       )}
 
-      {/* FIXED: Game Completion Modal - Hanya akan redirect setelah user klik tombol */}
+      {/* Game Completion Modal */}
       {showGameCompletionModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
           <div className={`p-8 rounded-3xl shadow-2xl text-center transform animate-scaleIn border-2 max-w-md mx-4 ${
@@ -468,7 +476,7 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
               </p>
             </div>
 
-            {/* FIXED: Tombol yang HARUS diklik untuk melanjutkan */}
+            {/* Action Button */}
             <div className="space-y-3">
               <button
                 onClick={handleGameCompletionClose}
@@ -481,7 +489,6 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
                 {gameEndReason === 'lives' ? 'Kembali ke Menu' : 'Lihat Hasil'}
               </button>
               
-              {/* Tambahan info bahwa user harus klik */}
               <p className="text-white/60 text-xs">
                 Klik tombol di atas untuk melanjutkan
               </p>

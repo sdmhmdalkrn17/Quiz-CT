@@ -90,47 +90,61 @@ const App: React.FC = () => {
     }
   }, []);
 
+// FIXED: Modifikasi handleAnswer untuk membedakan mode latihan dan ujian
 const handleAnswer = useCallback((isCorrect: boolean, question: Question, selectedOptionId: string, timeRemaining: number = 0) => {
   const points = calculatePoints(isCorrect, timeRemaining);
   setScore(prevScore => prevScore + points);
   
+  // PENTING: Hanya kurangi nyawa jika mode UJIAN dan jawaban salah
   if (!isCorrect) {
-    setLives(prevLives => {
-      const newLives = prevLives - 1;
-      if (newLives <= 0) {
-        setIsGameOver(true);
-      }
-      return newLives;
-    });
-    
+    // Selalu catat jawaban salah untuk review, tidak peduli mode apa
     setIncorrectlyAnswered(prev => [...prev, { 
       question, 
       userAnswerId: selectedOptionId,
       timeRemaining: timeRemaining 
     }]);
+    
+    // HANYA kurangi nyawa jika mode UJIAN
+    if (gameMode === 'exam') {
+      setLives(prevLives => {
+        const newLives = prevLives - 1;
+        if (newLives <= 0) {
+          setIsGameOver(true);
+        }
+        return newLives;
+      });
+    }
+    // Di mode latihan, nyawa tidak berkurang sama sekali
   }
-}, [calculatePoints]); 
+}, [calculatePoints, gameMode]); // Tambahkan gameMode ke dependency
 
+  // FIXED: Modifikasi handleNextQuestion untuk membedakan mode latihan dan ujian
   const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < quizQuestions.length - 1) {
       setCurrentQuestionIndex(prevIndex => prevIndex + 1);
     } else {
-      // Check if should progress to next level
-      if (lives > 0 && currentLevel < 3) {
-        // Progress to next level
-        const nextLevel = currentLevel + 1;
-        setCurrentLevel(nextLevel);
-        const nextLevelQuestions = prepareQuizQuestions(nextLevel);
-        if (nextLevelQuestions.length > 0) {
-          setQuizQuestions(nextLevelQuestions);
-          setCurrentQuestionIndex(0);
-          return;
+      // PERBAIKAN: Logika naik level yang berbeda untuk mode latihan dan ujian
+      if (currentLevel < 3) {
+        // Untuk mode LATIHAN: selalu bisa naik level
+        // Untuk mode UJIAN: hanya bisa naik level jika nyawa > 0
+        const canProgressToNextLevel = gameMode === 'practice' || (gameMode === 'exam' && lives > 0);
+        
+        if (canProgressToNextLevel) {
+          // Progress to next level
+          const nextLevel = currentLevel + 1;
+          setCurrentLevel(nextLevel);
+          const nextLevelQuestions = prepareQuizQuestions(nextLevel);
+          if (nextLevelQuestions.length > 0) {
+            setQuizQuestions(nextLevelQuestions);
+            setCurrentQuestionIndex(0);
+            return;
+          }
         }
       }
       // End game - go to results
       handleScreenTransition(GameScreen.Results);
     }
-  }, [currentQuestionIndex, quizQuestions.length, lives, currentLevel, prepareQuizQuestions, handleScreenTransition]);
+  }, [currentQuestionIndex, quizQuestions.length, lives, currentLevel, prepareQuizQuestions, handleScreenTransition, gameMode]); // Tambahkan gameMode ke dependency
 
 
   const handleGameOver = useCallback(() => {
