@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, Home, Search, Bookmark, Menu, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Home, Search, Menu, X } from 'lucide-react';
 
 interface Material {
   id: number;
@@ -230,7 +230,6 @@ MSCT (Multi Slice Computed Tomography) dikenal sebagai generasi ke-7 dari teknol
 const MaterialScreen: React.FC<MaterialScreenProps> = ({ onNavigateBack }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [bookmarks, setBookmarks] = useState<number[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<Material[]>(materialData);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -261,14 +260,6 @@ const MaterialScreen: React.FC<MaterialScreenProps> = ({ onNavigateBack }) => {
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
     setSidebarOpen(false);
-  };
-
-  const toggleBookmark = (materialId: number) => {
-    const newBookmarks = bookmarks.includes(materialId)
-      ? bookmarks.filter(id => id !== materialId)
-      : [...bookmarks, materialId];
-    
-    setBookmarks(newBookmarks);
   };
 
   const currentMaterial = filteredMaterials[currentSlide];
@@ -381,13 +372,10 @@ const MaterialScreen: React.FC<MaterialScreenProps> = ({ onNavigateBack }) => {
                     }`}
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex-1 pr-2">
+                      <div className="flex-1">
                         <div className="text-xs text-white/50 mb-1 font-medium">{material.category}</div>
                         <div className="text-sm font-medium line-clamp-2 group-hover:text-white transition-colors">{material.title}</div>
                       </div>
-                      {bookmarks.includes(material.id) && (
-                        <Bookmark className="w-4 h-4 text-yellow-400 fill-current flex-shrink-0" />
-                      )}
                     </div>
                   </button>
                 ))}
@@ -402,7 +390,7 @@ const MaterialScreen: React.FC<MaterialScreenProps> = ({ onNavigateBack }) => {
                 {/* Material Header */}
                 <div className="bg-gradient-to-r from-slate-800/60 to-slate-700/60 p-6 border-b border-slate-600/50">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1 pr-4">
+                    <div className="flex-1">
                       <div className="text-sm text-sky-400 mb-2 font-medium flex items-center space-x-2">
                         <div className="w-2 h-2 bg-sky-400 rounded-full"></div>
                         <span>{currentMaterial.category}</span>
@@ -411,16 +399,6 @@ const MaterialScreen: React.FC<MaterialScreenProps> = ({ onNavigateBack }) => {
                         {currentMaterial.title}
                       </h2>
                     </div>
-                    <button
-                      onClick={() => toggleBookmark(currentMaterial.id)}
-                      className={`p-3 rounded-xl transition-all duration-200 hover:scale-110 flex-shrink-0 ${
-                        bookmarks.includes(currentMaterial.id)
-                          ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-400/30'
-                          : 'bg-white/5 text-white/50 hover:text-white border border-white/10 hover:border-white/20'
-                      }`}
-                    >
-                      <Bookmark className={`w-6 h-6 ${bookmarks.includes(currentMaterial.id) ? 'fill-current' : ''}`} />
-                    </button>
                   </div>
                 </div>
 

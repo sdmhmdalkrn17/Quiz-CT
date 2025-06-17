@@ -90,28 +90,26 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleAnswer = useCallback((isCorrect: boolean, question: Question, selectedOptionId: string, timeRemaining: number = 0) => {
-    const points = calculatePoints(isCorrect, timeRemaining);
-    setScore(prevScore => prevScore + points);
+const handleAnswer = useCallback((isCorrect: boolean, question: Question, selectedOptionId: string, timeRemaining: number = 0) => {
+  const points = calculatePoints(isCorrect, timeRemaining);
+  setScore(prevScore => prevScore + points);
+  
+  if (!isCorrect) {
+    setLives(prevLives => {
+      const newLives = prevLives - 1;
+      if (newLives <= 0) {
+        setIsGameOver(true);
+      }
+      return newLives;
+    });
     
-    if (!isCorrect) {
-      setLives(prevLives => {
-        const newLives = prevLives - 1;
-        if (newLives <= 0) {
-          setIsGameOver(true);
-          // Langsung ke results screen
-          setTimeout(() => handleScreenTransition(GameScreen.Results), 1000);
-        }
-        return newLives;
-      });
-      
-      setIncorrectlyAnswered(prev => [...prev, { 
-        question, 
-        userAnswerId: selectedOptionId,
-        timeRemaining: timeRemaining 
-      }]);
-    }
-  }, [calculatePoints, handleScreenTransition]);
+    setIncorrectlyAnswered(prev => [...prev, { 
+      question, 
+      userAnswerId: selectedOptionId,
+      timeRemaining: timeRemaining 
+    }]);
+  }
+}, [calculatePoints]); 
 
   const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < quizQuestions.length - 1) {
@@ -134,6 +132,14 @@ const App: React.FC = () => {
     }
   }, [currentQuestionIndex, quizQuestions.length, lives, currentLevel, prepareQuizQuestions, handleScreenTransition]);
 
+
+  const handleGameOver = useCallback(() => {
+    handleScreenTransition(GameScreen.Results);
+  }, [handleScreenTransition]);
+
+  const handleGameComplete = useCallback(() => {
+    handleScreenTransition(GameScreen.Results);
+  }, [handleScreenTransition]);
   const restartGame = useCallback(() => {
     handleScreenTransition(GameScreen.Welcome);
   }, [handleScreenTransition]);
@@ -181,6 +187,8 @@ const App: React.FC = () => {
             currentLevel={currentLevel}
             lives={lives}
             isGameOver={isGameOver}
+            onGameOver={handleGameOver}   
+            onGameComplete={handleGameComplete}
           />
         );
       case GameScreen.Results:

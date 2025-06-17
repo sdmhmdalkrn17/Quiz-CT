@@ -16,7 +16,8 @@ interface GameScreenProps {
   currentLevel: number; 
   lives: number;
   isGameOver: boolean;
-  onGameOver?: () => void; // Callback untuk game over
+  onGameOver?: () => void;
+  onGameComplete?: () => void;
 }
 
 const GameScreenComponent: React.FC<GameScreenProps> = ({
@@ -31,9 +32,9 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
   lives,
   isGameOver,
   onGameOver,
+  onGameComplete,
 }) => {
   
-  // Get time per question based on current level
   const timePerQuestion = getTimePerQuestion(currentLevel);
   
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -44,20 +45,19 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
   const [timerKey, setTimerKey] = useState<number>(Date.now());
   const [currentTimeRemaining, setCurrentTimeRemaining] = useState<number>(timePerQuestion);
   
-  // New states for transitions and game over
   const [showLevelTransition, setShowLevelTransition] = useState<boolean>(false);
-  const [showGameOverModal, setShowGameOverModal] = useState<boolean>(false);
+  const [showGameCompletionModal, setShowGameCompletionModal] = useState<boolean>(false);
   const [transitionLevel, setTransitionLevel] = useState<number>(currentLevel);
   const [lastKnownLevel, setLastKnownLevel] = useState<number>(currentLevel);
   
-  // New states for exam mode feedback and game completion
   const [showExamFeedback, setShowExamFeedback] = useState<boolean>(false);
-  const [showGameCompletionModal, setShowGameCompletionModal] = useState<boolean>(false);
   const [gameEndReason, setGameEndReason] = useState<'lives' | 'questions' | null>(null);
-  const [waitingForCompletion, setWaitingForCompletion] = useState<boolean>(false);
+  
+  // NEW: State untuk mengontrol apakah user sudah klik tombol
+  const [userConfirmedGameEnd, setUserConfirmedGameEnd] = useState<boolean>(false);
 
   const handleOptionSelect = useCallback((optionId: string) => {
-    if (isSubmitted || showLevelTransition) return; // Prevent selection during level transition
+    if (isSubmitted || showLevelTransition) return;
     setSelectedOptionId(optionId);
   }, [isSubmitted, showLevelTransition]);
 
@@ -74,7 +74,7 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
   }, [onNext, timePerQuestion]);
 
   const handleSubmit = useCallback(() => {
-    if (!selectedOptionId || isSubmitted || showLevelTransition) return; // Prevent submit during level transition
+    if (!selectedOptionId || isSubmitted || showLevelTransition) return;
 
     setIsSubmitted(true);
     setIsAnswered(true);
@@ -85,7 +85,6 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
     if (gameMode === 'practice') {
       setShowFeedbackModal(true);
     } else if (gameMode === 'exam') {
-      // Show exam feedback for correct/incorrect without revealing answer
       setShowExamFeedback(true);
       setTimeout(() => {
         setShowExamFeedback(false);
@@ -97,14 +96,13 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
   }, [selectedOptionId, isSubmitted, question, onAnswerSelected, gameMode, proceedToNext, currentTimeRemaining, showLevelTransition]);
 
   const handleTimeUp = useCallback(() => {
-    if (!isSubmitted && !showLevelTransition) { // Don't trigger time up during level transition
+    if (!isSubmitted && !showLevelTransition) {
       setIsSubmitted(true);
       setIsAnswered(true);
       setIsCorrect(false);
       onAnswerSelected(false, question, selectedOptionId || 'timed_out', 0); 
       
       if (gameMode === 'exam') {
-        // Show wrong feedback for timeout in exam mode
         setShowExamFeedback(true);
         setTimeout(() => {
           setShowExamFeedback(false);
@@ -113,60 +111,52 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
           }, 300);
         }, 1500);
       } else {
-        // Immediately proceed to next question when time is up in practice mode
         proceedToNext();
       }
     }
   }, [isSubmitted, onAnswerSelected, question, selectedOptionId, proceedToNext, showLevelTransition, gameMode]);
 
-  // Update current time remaining
   const handleTimeUpdate = useCallback((timeRemaining: number) => {
     setCurrentTimeRemaining(timeRemaining);
   }, []);
 
-  // Handle level transition - improved logic with better state management
   useEffect(() => {
-    // Only show level transition if level actually increased
     if (currentLevel > lastKnownLevel && !showLevelTransition) {
       console.log(`Level up detected: ${lastKnownLevel} -> ${currentLevel}`);
       setTransitionLevel(currentLevel);
       setShowLevelTransition(true);
       
-      // Auto-hide transition after 2.5 seconds (reduced from 3 seconds)
       const timer = setTimeout(() => {
         console.log('Hiding level transition');
         setShowLevelTransition(false);
-        setLastKnownLevel(currentLevel); // Update last known level after hiding
+        setLastKnownLevel(currentLevel);
       }, 2500);
       
       return () => {
         clearTimeout(timer);
       };
     } else if (currentLevel !== lastKnownLevel && !showLevelTransition) {
-      // Update last known level if it changed but didn't increase (shouldn't happen normally)
       setLastKnownLevel(currentLevel);
     }
   }, [currentLevel, lastKnownLevel, showLevelTransition]);
 
-  // Handle game over when lives reach 0
+  // FIXED: Handle game over when lives reach 0 - hanya show modal, tidak auto-redirect
   useEffect(() => {
-    if (lives === 0 && !showGameOverModal && !showGameCompletionModal) {
+    if (lives === 0 && !showGameCompletionModal && !userConfirmedGameEnd) {
       setGameEndReason('lives');
       setShowGameCompletionModal(true);
     }
-  }, [lives, showGameOverModal, showGameCompletionModal]);
+  }, [lives, showGameCompletionModal, userConfirmedGameEnd]);
 
-// Handle game completion when all questions are finished
+  // FIXED: Handle game completion when all questions are finished - hanya show modal, tidak auto-redirect
   useEffect(() => {
-    if (isGameOver && questionNumber >= totalQuestions && !showGameCompletionModal && !waitingForCompletion) {
+    if (isGameOver && questionNumber >= totalQuestions && !showGameCompletionModal && !userConfirmedGameEnd) {
       setGameEndReason('questions');
-      setWaitingForCompletion(true); // Set waiting state instead of showing modal directly
+      setShowGameCompletionModal(true);
     }
-  }, [isGameOver, questionNumber, totalQuestions, showGameCompletionModal, waitingForCompletion]);
+  }, [isGameOver, questionNumber, totalQuestions, showGameCompletionModal, userConfirmedGameEnd]);
 
-  // Reset states when question changes
   useEffect(() => {
-    // Don't reset states during level transition
     if (showLevelTransition) return;
     
     setSelectedOptionId(null);
@@ -182,22 +172,25 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
   const showSubmitButton = selectedOptionId && !isSubmitted && !showLevelTransition;
   const showNextButton = isSubmitted && gameMode === 'practice' && !showFeedbackModal && !showLevelTransition;
 
+  // FIXED: Handler hanya dipanggil setelah user mengklik tombol secara eksplisit
   const handleGameCompletionClose = () => {
-    if (waitingForCompletion && gameEndReason === 'questions') {
-      // First click shows the completion modal
-      setWaitingForCompletion(false);
-      setShowGameCompletionModal(true);
-    } else {
-      // Second click (or game over) goes to menu
-      setShowGameCompletionModal(false);
-      setShowGameOverModal(false);
-      if (onGameOver) {
-        onGameOver();
+    setUserConfirmedGameEnd(true); // Mark bahwa user sudah confirm
+    setShowGameCompletionModal(false);
+    
+    // Delay sedikit untuk memastikan modal tertutup dulu
+    setTimeout(() => {
+      if (gameEndReason === 'lives') {
+        if (onGameOver) {
+          onGameOver();
+        }
+      } else if (gameEndReason === 'questions') {
+        if (onGameComplete) {
+          onGameComplete();
+        }
       }
-    }
+    }, 100);
   };
 
-  // Force close level transition (emergency button for debugging)
   const handleLevelTransitionClick = () => {
     console.log('Level transition clicked - force closing');
     setShowLevelTransition(false);
@@ -289,7 +282,7 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
                 duration={timePerQuestion} 
                 onTimeUp={handleTimeUp} 
                 onTimeUpdate={handleTimeUpdate}
-                isPlaying={!isSubmitted && !showLevelTransition && !showExamFeedback} // Pause timer during level transition and exam feedback
+                isPlaying={!isSubmitted && !showLevelTransition && !showExamFeedback}
                 key={timerKey} 
               />
             </div>
@@ -430,16 +423,18 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
         </div>
       )}
 
-      {/* Game Completion/Game Over Modal */}
+      {/* FIXED: Game Completion Modal - Hanya akan redirect setelah user klik tombol */}
       {showGameCompletionModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
           <div className={`p-8 rounded-3xl shadow-2xl text-center transform animate-scaleIn border-2 max-w-md mx-4 ${
             gameEndReason === 'lives' 
               ? 'bg-gradient-to-br from-red-600 via-red-700 to-red-800 border-red-400/30'
-              : 'bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 border-blue-400/30'
+              : 'bg-gradient-to-br from-green-600 via-green-700 to-green-800 border-green-400/30'
           }`}>
             <div className="mb-6">
-              <div className="w-24 h-24 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center">
+              <div className={`w-24 h-24 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center ${
+                gameEndReason === 'lives' ? 'animate-pulse' : 'animate-bounce'
+              }`}>
                 {gameEndReason === 'lives' ? (
                   <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -451,14 +446,14 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
                 )}
               </div>
               <h2 className="text-4xl font-bold text-white mb-2">
-                {gameEndReason === 'lives' ? 'Game Over' : 'Game Selesai!'}
+                {gameEndReason === 'lives' ? 'Game Over!' : 'Selamat!'}
               </h2>
               <p className={`text-xl mb-4 ${
-                gameEndReason === 'lives' ? 'text-red-100' : 'text-blue-100'
+                gameEndReason === 'lives' ? 'text-red-100' : 'text-green-100'
               }`}>
                 {gameEndReason === 'lives' 
                   ? 'Nyawa Anda telah habis!' 
-                  : 'Selamat! Anda telah menyelesaikan semua soal!'
+                  : 'Anda telah menyelesaikan semua soal!'
                 }
               </p>
             </div>
@@ -468,41 +463,29 @@ const GameScreenComponent: React.FC<GameScreenProps> = ({
               <p className="text-white/80 text-sm mb-1">Skor Akhir</p>
               <p className="text-3xl font-bold text-white">{currentScore}</p>
               <p className="text-white/60 text-sm">Level {currentLevel}</p>
-            </div>
-
-            {/* Tombol Selesai */}
-            <button
-              onClick={handleGameCompletionClose}
-              className="bg-white/20 hover:bg-white/30 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 border border-white/30 text-lg w-full"
-            >
-              Kembali ke Menu
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Waiting for Completion Button */}
-      {waitingForCompletion && gameEndReason === 'questions' && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-gradient-to-br from-green-600 via-green-700 to-green-800 border-green-400/30 p-8 rounded-3xl shadow-2xl text-center transform animate-scaleIn border-2 max-w-md mx-4">
-            <div className="mb-6">
-              <div className="w-24 h-24 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
-                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h2 className="text-4xl font-bold text-white mb-2 animate-pulse">Selamat!</h2>
-              <p className="text-xl text-green-100 mb-4">
-                Anda telah menyelesaikan semua soal!
+              <p className="text-white/60 text-xs mt-1">
+                Soal Terjawab: {questionNumber - 1}/{totalQuestions}
               </p>
             </div>
-            
-            <button
-              onClick={handleGameCompletionClose}
-              className="bg-white/20 hover:bg-white/30 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 border border-white/30 text-lg"
-            >
-              Lihat Hasil
-            </button>
+
+            {/* FIXED: Tombol yang HARUS diklik untuk melanjutkan */}
+            <div className="space-y-3">
+              <button
+                onClick={handleGameCompletionClose}
+                className={`font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 border text-lg w-full ${
+                  gameEndReason === 'lives' 
+                    ? 'bg-red-500/20 hover:bg-red-500/30 text-white border-red-400/30 hover:border-red-400/50' 
+                    : 'bg-green-500/20 hover:bg-green-500/30 text-white border-green-400/30 hover:border-green-400/50'
+                }`}
+              >
+                {gameEndReason === 'lives' ? 'Kembali ke Menu' : 'Lihat Hasil'}
+              </button>
+              
+              {/* Tambahan info bahwa user harus klik */}
+              <p className="text-white/60 text-xs">
+                Klik tombol di atas untuk melanjutkan
+              </p>
+            </div>
           </div>
         </div>
       )}
