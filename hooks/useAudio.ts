@@ -38,6 +38,7 @@ export const useAudio = (audioSrc: string, options?: {
       }
     };
 
+    
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handleEnded = () => setIsPlaying(false);

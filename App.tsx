@@ -29,6 +29,7 @@ const App: React.FC = () => {
   const [lives, setLives] = useState<number>(5);
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
 
+  
   // Initialize audio with simplified configuration
   const {
     isPlaying,

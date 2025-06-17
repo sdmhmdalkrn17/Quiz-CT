@@ -34,4 +34,5 @@ const AudioControls: React.FC<AudioControlsProps> = ({
   );
 };
 
+
 export default AudioControls;
